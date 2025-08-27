@@ -15,6 +15,9 @@
             --card-bg: #2d2e4a;
             --shadow: 0 4px 24px rgba(0,0,0,0.2);
             --transition: 0.3s cubic-bezier(.25,.8,.25,1);
+            --section-title: #fff;
+            --section-content: #fff;
+            --contact-info: #fff;
         }
         html {
             scroll-behavior: smooth;
@@ -111,11 +114,9 @@
             margin-bottom: 0.7rem;
             color: var(--accent);
         }
+        #home h2,
         #home p {
-            font-size: 1.2rem;
-            color: var(--text-main);
-            margin: 0;
-            letter-spacing: 0.5px;
+            color: var(--section-content);
         }
         #projects {
             text-align: center;
@@ -123,7 +124,7 @@
         #projects h3 {
             font-size: 1.7rem;
             margin-bottom: 2rem;
-            color: var(--accent);
+            color: var(--section-title);
         }
         .projects-grid {
             display: grid;
@@ -157,7 +158,7 @@
         .project-desc {
             font-size: 1rem;
             margin-bottom: 1.2rem;
-            color: var(--text-main);
+            color: var(--section-content);
         }
         .project-btn {
             background: var(--accent);
@@ -179,12 +180,12 @@
         #about h3 {
             font-size: 1.7rem;
             margin-bottom: 1.2rem;
-            color: var(--accent);
+            color: var(--section-title);
             text-align: center;
         }
         #about p {
             font-size: 1.08rem;
-            color: var(--text-main);
+            color: var(--section-content);
             line-height: 1.7;
             text-align: center;
             max-width: 600px;
@@ -193,7 +194,7 @@
         #contact h3 {
             font-size: 1.7rem;
             margin-bottom: 1.2rem;
-            color: var(--accent);
+            color: var(--section-title);
             text-align: center;
         }
         .contact-info {
@@ -206,7 +207,7 @@
             padding: 2rem 1.5rem;
             border-radius: 16px;
             box-shadow: var(--shadow);
-            color: var(--text-main);
+            color: var(--contact-info);
             font-size: 1.08rem;
         }
         .contact-info span {
@@ -264,8 +265,8 @@
             <h3>Projects</h3>
             <div class="projects-grid">
                 <div class="project-card">
-                    <div class="project-title">Pixel Pantry</div>
-                    <div class="project-desc">A fun app to organize your digital recipes and ingredients. Never forget what’s in your fridge again!</div>
+                    <div class="project-title">Schematic Animation</div>
+                    <div class="project-desc">A tool that helps make a world code or a code block code that will animate your creations!</div>
                     <button class="project-btn">Learn More</button>
                 </div>
                 <div class="project-card">
@@ -274,7 +275,7 @@
                     <button class="project-btn">Learn More</button>
                 </div>
                 <div class="project-card">
-                    <div class="project-title">Chill Chat</div>
+                    <div class="project-title">Nothing</div>
                     <div class="project-desc">A minimalist chat app for connecting with friends. Fast, secure, and beautifully simple.</div>
                     <button class="project-btn">Learn More</button>
                 </div>
@@ -288,7 +289,7 @@
         <section id="about">
             <h3>About Me</h3>
             <p>
-                Hi! I’m Fridgee, a passionate developer who loves crafting delightful web experiences. Whether it’s building apps, designing interfaces, or experimenting with new tech, I’m always eager to learn and create. Let’s make something awesome together!
+                Hi! I’m Fridgee, a Lazy developer who loves crafting different scripts and help people. Whether it’s building userscripts, or experimenting with new tech, I’m always too lazy to learn and create. So do something awesome yourself and reach your goals!
             </p>
         </section>
         <section id="contact">
