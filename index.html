@@ -1,16 +1,16 @@
 <section id="schematick-animator" style="margin-bottom:4rem;">
     <h3 style="text-align:center;color:var(--accent);margin-bottom:1.2rem;">Bloxd Schematick Animator</h3>
     <div id="animator-root" style="max-width:900px;margin:0 auto;"></div>
-        <div id="drop-area" tabindex="0" style="border:2px dashed #ff6b6b;border-radius:12px;padding:2rem;text-align:center;background:#fff;color:#000;cursor:pointer;margin-bottom:1.5rem;"></div>
-            <strong>Drop schematick, bloxdschem, or JSON files here or paste JSON below</strong>
-            <br>
-            <input type="file" id="file-input" multiple accept=".schematick,.bloxdschem,.json" style="margin-top:1rem;">
-            <br>
-            <textarea id="json-input" placeholder="Paste raw schematick/bloxdschem JSON here..." rows="3" style="width:100%;margin-top:1rem;border-radius:8px;border:1px solid #ff6b6b;padding:0.7rem;font-size:1rem;color:#23243a;background:#fff;"></textarea>
-            <br>
-            <button id="add-json-btn" class="project-btn" style="margin-top:0.7rem;background:#ff6b6b;color:#fff;">Add JSON as Frame</button>
-            <div id="drop-error" style="color:#ff6b6b;margin-top:0.7rem;display:none;"></div>
-        </div>
+        <div id="drop-area" tabindex="0" style="border:2px dashed var(--accent);border-radius:12px;padding:2rem;text-align:center;background:#ffffff;color:#000000;cursor:pointer;margin-bottom:1.5rem;">
+    <strong>Drop schematics files here or paste JSON below</strong>
+    <br>
+    <input type="file" id="file-input" multiple accept=".schematick,.json,.bloxdschem" style="margin-top:1rem;">
+    <br>
+    <textarea id="json-input" placeholder="Paste raw schematics JSON here..." rows="3" style="width:100%;margin-top:1rem;border-radius:8px;border:1px solid var(--accent);padding:0.7rem;font-size:1rem;"></textarea>
+    <br>
+    <button id="add-json-btn" class="project-btn" style="margin-top:0.7rem;">Add JSON as Frame</button>
+    <div id="drop-error" style="color:#ff6b6b;margin-top:0.7rem;display:none;"></div>
+</div>
         <div id="frames-panel" style="margin-bottom:2rem;">
             <h4 style="color:#ff6b6b;margin-bottom:0.7rem;">Frames</h4>
             <div id="frames-list"></div>
