@@ -1,88 +1,88 @@
 <section id="schematick-animator" style="margin-bottom:4rem;">
     <h3 style="text-align:center;color:var(--accent);margin-bottom:1.2rem;">Bloxd Schematick Animator</h3>
     <div id="animator-root" style="max-width:900px;margin:0 auto;"></div>
-        <div id="drop-area" tabindex="0" style="border:2px dashed var(--accent);border-radius:12px;padding:2rem;text-align:center;background:rgba(45,46,74,0.7);color:#fff;cursor:pointer;margin-bottom:1.5rem;">
+        <div id="drop-area" tabindex="0" style="border:2px dashed #ff6b6b;border-radius:12px;padding:2rem;text-align:center;background:#23243a;color:#ff6b6b;cursor:pointer;margin-bottom:1.5rem;"></div>
             <strong>Drop schematick, bloxdschem, or JSON files here or paste JSON below</strong>
             <br>
             <input type="file" id="file-input" multiple accept=".schematick,.bloxdschem,.json" style="margin-top:1rem;">
             <br>
-            <textarea id="json-input" placeholder="Paste raw schematick/bloxdschem JSON here..." rows="3" style="width:100%;margin-top:1rem;border-radius:8px;border:1px solid var(--accent);padding:0.7rem;font-size:1rem;"></textarea>
+            <textarea id="json-input" placeholder="Paste raw schematick/bloxdschem JSON here..." rows="3" style="width:100%;margin-top:1rem;border-radius:8px;border:1px solid #ff6b6b;padding:0.7rem;font-size:1rem;color:#23243a;background:#fff;"></textarea>
             <br>
-            <button id="add-json-btn" class="project-btn" style="margin-top:0.7rem;">Add JSON as Frame</button>
+            <button id="add-json-btn" class="project-btn" style="margin-top:0.7rem;background:#ff6b6b;color:#fff;">Add JSON as Frame</button>
             <div id="drop-error" style="color:#ff6b6b;margin-top:0.7rem;display:none;"></div>
         </div>
         <div id="frames-panel" style="margin-bottom:2rem;">
-            <h4 style="color:var(--accent);margin-bottom:0.7rem;">Frames</h4>
+            <h4 style="color:#ff6b6b;margin-bottom:0.7rem;">Frames</h4>
             <div id="frames-list"></div>
             <div id="frame-controls" style="margin-top:1rem;display:none;">
-                <button id="prev-frame-btn" class="project-btn" style="margin-right:0.5rem;">Prev frame</button>
-                <button id="next-frame-btn" class="project-btn" style="margin-right:0.5rem;">Next frame</button>
-                <button id="play-frame-btn" class="project-btn">Play</button>
-                <span id="frame-info" style="margin-left:1.2rem;color:#fff;"></span>
+                <button id="prev-frame-btn" class="project-btn" style="margin-right:0.5rem;background:#ff6b6b;color:#fff;">Prev frame</button>
+                <button id="next-frame-btn" class="project-btn" style="margin-right:0.5rem;background:#ff6b6b;color:#fff;">Next frame</button>
+                <button id="play-frame-btn" class="project-btn" style="background:#ff6b6b;color:#fff;">Play</button>
+                <span id="frame-info" style="margin-left:1.2rem;color:#ff6b6b;"></span>
             </div>
-            <canvas id="frame-preview" width="180" height="120" style="display:none;margin-top:1rem;border-radius:8px;background:#23243a;"></canvas>
+            <canvas id="frame-preview" width="180" height="120" style="display:none;margin-top:1rem;border-radius:8px;background:#fff;"></canvas>
         </div>
         <div id="settings-panel" style="margin-bottom:2rem;">
-            <h4 style="color:var(--accent);margin-bottom:0.7rem;">Settings</h4>
+            <h4 style="color:#ff6b6b;margin-bottom:0.7rem;">Settings</h4>
             <div style="display:flex;flex-wrap:wrap;gap:1.2rem;">
                 <div>
-                    <label style="color:#fff;">Global Origin Offset:</label>
+                    <label style="color:#ff6b6b;">Global Origin Offset:</label>
                     <input type="number" id="origin-x" value="0" style="width:50px;">
                     <input type="number" id="origin-y" value="0" style="width:50px;">
                     <input type="number" id="origin-z" value="0" style="width:50px;">
-                    <button id="align-origin-btn" class="project-btn" style="margin-left:0.5rem;">Align to origin</button>
+                    <button id="align-origin-btn" class="""project-btn" style="""margin-left:0.5rem;background:#ff6b6b;color:#fff;">Align to origin</button>
                 </div>
                 <div>
-                    <label style="color:#fff;">Delay between frames:</label>
+                    <label style="color:#ff6b6b;">Delay between frames:</label>
                     <input type="number" id="frame-delay" value="20" min="1" style="width:70px;">
-                    <span title="Ticks (20 = 1s) or ms, depending on Bloxd context" style="color:#aaa;cursor:help;">?</span>
+                    <span title="Ticks (20 = 1s) or ms, depending on Bloxd context" style="color:#ff6b6b;cursor:help;">?</span>
                 </div>
                 <div>
-                    <label style="color:#fff;">Loop:</label>
+                    <label style="color:#ff6b6b;">Loop:</label>
                     <input type="checkbox" id="loop-checkbox" checked>
                 </div>
                 <div>
-                    <label style="color:#fff;">Optimize for size:</label>
+                    <label style="color:#ff6b6b;">Optimize for size:</label>
                     <input type="checkbox" id="optimize-checkbox" checked>
                 </div>
                 <div>
-                    <button id="fit-largest-btn" class="project-btn" style="margin-left:0.5rem;">Fit to largest</button>
-                    <button id="align-centers-btn" class="project-btn" style="margin-left:0.5rem;">Align centers</button>
+                    <button id="fit-largest-btn" class="project-btn" style="margin-left:0.5rem;background:#ff6b6b;color:#fff;">Fit to largest</button>
+                    <button id="align-centers-btn" class="project-btn" style="margin-left:0.5rem;background:#ff6b6b;color:#fff;">Align centers</button>
                 </div>
             </div>
         </div>
         <div id="estimate-panel" style="margin-bottom:2rem;">
-            <h4 style="color:var(--accent);margin-bottom:0.7rem;">Estimated Output Size</h4>
+            <h4 style="color:#ff6b6b;margin-bottom:0.7rem;">Estimated Output Size</h4>
             <div>
-                <span>World code: <span id="world-estimate" style="font-weight:bold;color:#fff;">0</span> / 16,001</span>
-                <span style="margin-left:2rem;">Code-block code: <span id="codeblock-estimate" style="font-weight:bold;color:#fff;">0</span> / 16,001</span>
+                <span>World code: <span id="world-estimate" style="font-weight:bold;color:#ff6b6b;">0</span> / 16,001</span>
+                <span style="margin-left:2rem;">Code-block code: <span id="codeblock-estimate" style="font-weight:bold;color:#ff6b6b;">0</span> / 16,001</span>
             </div>
         </div>
         <div id="generate-panel" style="margin-bottom:2rem;">
-            <button id="generate-world-btn" class="project-btn" style="margin-right:1rem;">Generate World Code</button>
-            <button id="generate-codeblock-btn" class="project-btn">Generate Code-block Code</button>
-            <button id="export-zip-btn" class="project-btn" style="margin-left:1rem;">Export ZIP</button>
+            <button id="generate-world-btn" class="project-btn" style="margin-right:1rem;background:#ff6b6b;color:#fff;">Generate World Code</button>
+            <button id="generate-codeblock-btn" class="project-btn" style="background:#ff6b6b;color:#fff;">Generate Code-block Code</button>
+            <button id="export-zip-btn" class="project-btn" style="margin-left:1rem;background:#ff6b6b;color:#fff;">Export ZIP</button>
         </div>
         <div id="result-panel" style="margin-bottom:2rem;display:none;">
-            <h4 style="color:var(--accent);margin-bottom:0.7rem;">Result</h4>
-            <textarea id="result-output" readonly rows="2" style="width:100%;border-radius:8px;border:1px solid var(--accent);padding:0.7rem;font-size:1rem;white-space:nowrap;overflow-x:auto;"></textarea>
+            <h4 style="color:#ff6b6b;margin-bottom:0.7rem;">Result</h4>
+            <textarea id="result-output" readonly rows="2" style="width:100%;border-radius:8px;border:1px solid #ff6b6b;padding:0.7rem;font-size:1rem;white-space:nowrap;overflow-x:auto;color:#23243a;background:#fff;"></textarea>
             <div style="margin-top:0.7rem;">
-                <button id="copy-result-btn" class="project-btn" style="margin-right:0.7rem;">Copy</button>
-                <button id="download-result-btn" class="project-btn">Download .txt</button>
-                <span id="result-count" style="margin-left:1.2rem;font-weight:bold;"></span>
-                <span id="result-indicator" style="margin-left:0.7rem;"></span>
+                <button id="copy-result-btn" class="project-btn" style="margin-right:0.7rem;background:#ff6b6b;color:#fff;">Copy</button>
+                <button id="download-result-btn" class="project-btn" style="background:#ff6b6b;color:#fff;">Download .txt</button>
+                <span id="result-count" style="margin-left:1.2rem;font-weight:bold;color:#ff6b6b;"></span>
+                <span id="result-indicator" style="margin-left:0.7rem;color:#ff6b6b;"></span>
                 <span id="compressed-label" style="margin-left:1.2rem;display:none;">
-                    <span style="background:var(--accent);color:#23243a;padding:2px 8px;border-radius:6px;font-size:0.95em;">compressed</span>
-                    <button id="toggle-uncompressed-btn" class="project-btn" style="margin-left:0.5rem;padding:2px 8px;font-size:0.95em;">Show original</button>
+                    <span style="background:#ff6b6b;color:#fff;padding:2px 8px;border-radius:6px;font-size:0.95em;">compressed</span>
+                    <button id="toggle-uncompressed-btn" class="project-btn" style="margin-left:0.5rem;padding:2px 8px;font-size:0.95em;background:#ff6b6b;color:#fff;">Show original</button>
                 </span>
             </div>
             <div id="uncompressed-preview" style="margin-top:1rem;display:none;">
-                <textarea readonly rows="6" style="width:100%;border-radius:8px;border:1px solid var(--accent);padding:0.7rem;font-size:0.95em;"></textarea>
+                <textarea readonly rows="6" style="width:100%;border-radius:8px;border:1px solid #ff6b6b;padding:0.7rem;font-size:0.95em;color:#23243a;background:#fff;"></textarea>
             </div>
             <div id="result-error" style="color:#ff6b6b;margin-top:1rem;display:none;"></div>
         </div>
-        <div id="help-panel" style="margin-top:2rem;background:rgba(45,46,74,0.7);border-radius:12px;padding:1.2rem;color:#fff;">
-            <h4 style="color:var(--accent);margin-bottom:0.7rem;">Help & Examples</h4>
+        <div id="help-panel" style="margin-top:2rem;background:#23243a;border-radius:12px;padding:1.2rem;color:#ff6b6b;">
+            <h4 style="color:#ff6b6b;margin-bottom:0.7rem;">Help & Examples</h4>
             <ul style="margin-bottom:1rem;">
                 <li>Upload multiple <code>.schematick</code>, <code>.bloxdschem</code>, or <code>.json</code> files or paste JSON.</li>
                 <li>Reorder frames, set delay, origin, optimize for size.</li>
@@ -92,7 +92,7 @@
                 <li>Max output size: <strong>16,001 characters</strong>. If too large, reduce blocks or optimize.</li>
             </ul>
             <details>
-                <summary style="color:var(--accent);cursor:pointer;">Show advanced tips</summary>
+                <summary style="color:#ff6b6b;cursor:pointer;">Show advanced tips</summary>
                 <ul>
                     <li>Optimize for size: enables diffing and coordinate packing.</li>
                     <li>ZIP export includes world_code.txt, code_block.txt, frames.json.</li>
@@ -144,10 +144,10 @@ const compressedLabel = document.getElementById('compressed-label');
 const toggleUncompressedBtn = document.getElementById('toggle-uncompressed-btn');
 const uncompressedPreview = document.getElementById('uncompressed-preview');
 const resultError = document.getElementById('result-error');
-dropArea.addEventListener('dragover',e=>{e.preventDefault();dropArea.style.background='#00ffd033';});
-dropArea.addEventListener('dragleave',e=>{dropArea.style.background='rgba(45,46,74,0.7)';});
+dropArea.addEventListener('dragover',e=>{e.preventDefault();dropArea.style.background='#ff6b6b33';});
+dropArea.addEventListener('dragleave',e=>{dropArea.style.background='#23243a';});
 dropArea.addEventListener('drop',e=>{
-    e.preventDefault();dropArea.style.background='rgba(45,46,74,0.7)';
+    e.preventDefault();dropArea.style.background='#23243a';
     handleFiles(e.dataTransfer.files);
 });
 fileInput.addEventListener('change',()=>handleFiles(fileInput.files));
@@ -245,16 +245,16 @@ function updateFramesUI(){
     frames.forEach((f,i)=>{
         let div=document.createElement('div');
         div.className='frame-card';
-        div.style='background:var(--card-bg);border-radius:8px;padding:1rem;margin-bottom:0.7rem;display:flex;align-items:center;gap:1.2rem;';
+        div.style='background:#fff;border-radius:8px;padding:1rem;margin-bottom:0.7rem;display:flex;align-items:center;gap:1.2rem;';
         div.innerHTML=`
             <div style="flex:1;">
-                <strong style="color:var(--accent);">${f.name}</strong>
-                <div style="color:#fff;font-size:0.98em;">Blocks: ${f.blocks.length}, Box: [${f.bbox.min.x},${f.bbox.min.y},${f.bbox.min.z}]→[${f.bbox.max.x},${f.bbox.max.y},${f.bbox.max.z}]</div>
+                <strong style="color:#ff6b6b;">${f.name}</strong>
+                <div style="color:#23243a;font-size:0.98em;">Blocks: ${f.blocks.length}, Box: [${f.bbox.min.x},${f.bbox.min.y},${f.bbox.min.z}]→[${f.bbox.max.x},${f.bbox.max.y},${f.bbox.max.z}]</div>
             </div>
-            <button class="project-btn" data-move="up" data-idx="${i}" style="padding:2px 8px;">↑</button>
-            <button class="project-btn" data-move="down" data-idx="${i}" style="padding:2px 8px;">↓</button>
-            <button class="project-btn" data-remove="${i}" style="padding:2px 8px;background:#ff6b6b;">✕</button>
-            <button class="project-btn" data-select="${i}" style="padding:2px 8px;background:#00ffd0;color:#23243a;">Select</button>
+            <button class="project-btn" data-move="up" data-idx="${i}" style="padding:2px 8px;background:#ff6b6b;color:#fff;">↑</button>
+            <button class="project-btn" data-move="down" data-idx="${i}" style="padding:2px 8px;background:#ff6b6b;color:#fff;">↓</button>
+            <button class="project-btn" data-remove="${i}" style="padding:2px 8px;background:#ff6b6b;color:#fff;">✕</button>
+            <button class="project-btn" data-select="${i}" style="padding:2px 8px;background:#ff6b6b;color:#fff;">Select</button>
         `;
         framesList.appendChild(div);
     });
@@ -308,10 +308,10 @@ function drawFramePreview(blocks,canvas){
     let scale=Math.min(canvas.width/(dx+2),canvas.height/(dz+2));
     for(let b of blocks){
         let x=(b.x-minX+1)*scale, z=(b.z-minZ+1)*scale;
-        ctx.fillStyle='#00ffd0';
+        ctx.fillStyle='#ff6b6b';
         ctx.fillRect(x,z,scale*0.7,scale*0.7);
     }
-    ctx.strokeStyle='#fff';
+    ctx.strokeStyle='#23243a';
     ctx.strokeRect(scale,scale,dx*scale,dz*scale);
 }
 prevFrameBtn.onclick=()=>{if(selectedFrame>0){selectedFrame--;showFramePreview();}};
@@ -365,8 +365,8 @@ function updateEstimates(){
     let codeblockLen=estimateLength(norm,'codeblock');
     worldEstimate.textContent=worldLen;
     codeblockEstimate.textContent=codeblockLen;
-    worldEstimate.style.color=worldLen<=16001?'#00ffd0':'#ff6b6b';
-    codeblockEstimate.style.color=codeblockLen<=16001?'#00ffd0':'#ff6b6b';
+    worldEstimate.style.color=worldLen<=16001?'#ff6b6b':'#23243a';
+    codeblockEstimate.style.color=codeblockLen<=16001?'#ff6b6b':'#23243a';
 }
 function estimateLength(framesArr,type){
     let total=0;
@@ -444,7 +444,7 @@ function showResult(out,type,compressed,uncompressed){
     resultOutput.value=out;
     resultCount.textContent='Characters: '+out.length+' / 16,001';
     resultIndicator.textContent=out.length<=16001?'✅':'❌';
-    resultIndicator.style.color=out.length<=16001?'#00ffd0':'#ff6b6b';
+    resultIndicator.style.color=out.length<=16001?'#ff6b6b':'#23243a';
     resultError.style.display='none';
     compressedLabel.style.display=compressed?'':'none';
     uncompressedPreview.style.display='none';
@@ -850,11 +850,6 @@ function compressStringIfNeeded(str){
                 <div class="project-card">
                     <div class="project-title">Nothing</div>
                     <div class="project-desc">A minimalist chat app for connecting with friends. Fast, secure, and beautifully simple.</div>
-                    <button class="project-btn">Learn More</button>
-                </div>
-                <div class="project-card">
-                    <div class="project-title">Cool Counter</div>
-                    <div class="project-desc">A handy tool to track anything you want. Simple, intuitive, and visually appealing.</div>
                     <button class="project-btn">Learn More</button>
                 </div>
             </div>
