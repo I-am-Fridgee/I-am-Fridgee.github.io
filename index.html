@@ -1,105 +1,104 @@
 <section id="schematick-animator" style="margin-bottom:4rem;">
     <h3 style="text-align:center;color:var(--accent);margin-bottom:1.2rem;">Bloxd Schematick Animator</h3>
     <div id="animator-root" style="max-width:900px;margin:0 auto;"></div>
-        <div id="drop-area" tabindex="0" style="border:2px dashed var(--accent);border-radius:12px;padding:2rem;text-align:center;background:#ffffff;color:#000000;cursor:pointer;margin-bottom:1.5rem;">
-    <strong>Drop schematics files here or paste JSON below</strong>
-    <br>
-    <input type="file" id="file-input" multiple accept=".schematick,.json,.bloxdschem" style="margin-top:1rem;">
-    <br>
-    <textarea id="json-input" placeholder="Paste raw schematics JSON here..." rows="3" style="width:100%;margin-top:1rem;border-radius:8px;border:1px solid var(--accent);padding:0.7rem;font-size:1rem;"></textarea>
-    <br>
-    <button id="add-json-btn" class="project-btn" style="margin-top:0.7rem;">Add JSON as Frame</button>
-    <div id="drop-error" style="color:#ff6b6b;margin-top:0.7rem;display:none;"></div>
-</div>
-        <div id="frames-panel" style="margin-bottom:2rem;">
-            <h4 style="color:#ff6b6b;margin-bottom:0.7rem;">Frames</h4>
-            <div id="frames-list"></div>
-            <div id="frame-controls" style="margin-top:1rem;display:none;">
-                <button id="prev-frame-btn" class="project-btn" style="margin-right:0.5rem;background:#ff6b6b;color:#fff;">Prev frame</button>
-                <button id="next-frame-btn" class="project-btn" style="margin-right:0.5rem;background:#ff6b6b;color:#fff;">Next frame</button>
-                <button id="play-frame-btn" class="project-btn" style="background:#ff6b6b;color:#fff;">Play</button>
-                <span id="frame-info" style="margin-left:1.2rem;color:#ff6b6b;"></span>
-            </div>
-            <canvas id="frame-preview" width="180" height="120" style="display:none;margin-top:1rem;border-radius:8px;background:#fff;"></canvas>
+    <div id="drop-area" tabindex="0" style="border:3px dashed #ff6b6b;border-radius:14px;padding:2rem;text-align:center;background:transparent;color:#000;cursor:pointer;margin-bottom:1.5rem;box-shadow:0 4px 24px rgba(0,0,0,0.12);z-index:10;position:relative;transition:background 0.2s;"></div>
+        <strong>Drop <span style="color:#ff6b6b">schematick</span>, <span style="color:#ff6b6b">bloxdschem</span>, or <span style="color:#ff6b6b">JSON</span> files here or paste JSON below</strong>
+        <br>
+        <input type="file" id="file-input" multiple accept=".schematick,.bloxdschem,.json" style="margin-top:1rem;">
+        <br>
+        <textarea id="json-input" placeholder="Paste raw schematick/bloxdschem JSON here..." rows="3" style="width:100%;margin-top:1rem;border-radius:8px;border:1px solid #ff6b6b;padding:0.7rem;font-size:1rem;color:#23243a;background:#fff;"></textarea>
+        <br>
+        <button id="add-json-btn" class="project-btn" style="margin-top:0.7rem;background:#ff6b6b;color:#fff;">Add JSON as Frame</button>
+        <div id="drop-error" style="color:#ff6b6b;margin-top:0.7rem;display:none;"></div>
+    </div>
+    <div id="frames-panel" style="margin-bottom:2rem;">
+        <h4 style="color:#ff6b6b;margin-bottom:0.7rem;">Frames</h4>
+        <div id="frames-list"></div>
+        <div id="frame-controls" style="margin-top:1rem;display:none;">
+            <button id="prev-frame-btn" class="project-btn" style="margin-right:0.5rem;background:#ff6b6b;color:#fff;">Prev frame</button>
+            <button id="next-frame-btn" class="project-btn" style="margin-right:0.5rem;background:#ff6b6b;color:#fff;">Next frame</button>
+            <button id="play-frame-btn" class="project-btn" style="background:#ff6b6b;color:#fff;">Play</button>
+            <span id="frame-info" style="margin-left:1.2rem;color:#ff6b6b;"></span>
         </div>
-        <div id="settings-panel" style="margin-bottom:2rem;">
-            <h4 style="color:#ff6b6b;margin-bottom:0.7rem;">Settings</h4>
-            <div style="display:flex;flex-wrap:wrap;gap:1.2rem;">
-                <div>
-                    <label style="color:#ff6b6b;">Global Origin Offset:</label>
-                    <input type="number" id="origin-x" value="0" style="width:50px;">
-                    <input type="number" id="origin-y" value="0" style="width:50px;">
-                    <input type="number" id="origin-z" value="0" style="width:50px;">
-                    <button id="align-origin-btn" class="project-btn" style="margin-left:0.5rem;background:#ff6b6b;color:#fff;">Align to origin</button>
-                </div>
-                <div>
-                    <label style="color:#ff6b6b;">Delay between frames:</label>
-                    <input type="number" id="frame-delay" value="20" min="1" style="width:70px;">
-                    <span title="Ticks (20 = 1s) or ms, depending on Bloxd context" style="color:#ff6b6b;cursor:help;">?</span>
-                </div>
-                <div>
-                    <label style="color:#ff6b6b;">Loop:</label>
-                    <input type="checkbox" id="loop-checkbox" checked>
-                </div>
-                <div>
-                    <label style="color:#ff6b6b;">Optimize for size:</label>
-                    <input type="checkbox" id="optimize-checkbox" checked>
-                </div>
-                <div>
-                    <button id="fit-largest-btn" class="project-btn" style="margin-left:0.5rem;background:#ff6b6b;color:#fff;">Fit to largest</button>
-                    <button id="align-centers-btn" class="project-btn" style="margin-left:0.5rem;background:#ff6b6b;color:#fff;">Align centers</button>
-                </div>
-            </div>
-        </div>
-        <div id="estimate-panel" style="margin-bottom:2rem;">
-            <h4 style="color:#ff6b6b;margin-bottom:0.7rem;">Estimated Output Size</h4>
+        <canvas id="frame-preview" width="180" height="120" style="display:none;margin-top:1rem;border-radius:8px;background:#fff;"></canvas>
+    </div>
+    <div id="settings-panel" style="margin-bottom:2rem;">
+        <h4 style="color:#ff6b6b;margin-bottom:0.7rem;">Settings</h4>
+        <div style="display:flex;flex-wrap:wrap;gap:1.2rem;">
             <div>
-                <span>World code: <span id="world-estimate" style="font-weight:bold;color:#ff6b6b;">0</span> / 16,001</span>
-                <span style="margin-left:2rem;">Code-block code: <span id="codeblock-estimate" style="font-weight:bold;color:#ff6b6b;">0</span> / 16,001</span>
+                <label style="color:#ff6b6b;">Global Origin Offset:</label>
+                <input type="number" id="origin-x" value="0" style="width:50px;">
+                <input type="number" id="origin-y" value="0" style="width:50px;">
+                <input type="number" id="origin-z" value="0" style="width:50px;">
+                <button id="align-origin-btn" class="project-btn" style="margin-left:0.5rem;background:#ff6b6b;color:#fff;">Align to origin</button>
+            </div>
+            <div>
+                <label style="color:#ff6b6b;">Delay between frames:</label>
+                <input type="number" id="frame-delay" value="20" min="1" style="width:70px;">
+                <span title="Ticks (20 = 1s) or ms, depending on Bloxd context" style="color:#ff6b6b;cursor:help;">?</span>
+            </div>
+            <div>
+                <label style="color:#ff6b6b;">Loop:</label>
+                <input type="checkbox" id="loop-checkbox" checked>
+            </div>
+            <div>
+                <label style="color:#ff6b6b;">Optimize for size:</label>
+                <input type="checkbox" id="optimize-checkbox" checked>
+            </div>
+            <div>
+                <button id="fit-largest-btn" class="project-btn" style="margin-left:0.5rem;background:#ff6b6b;color:#fff;">Fit to largest</button>
+                <button id="align-centers-btn" class="project-btn" style="margin-left:0.5rem;background:#ff6b6b;color:#fff;">Align centers</button>
             </div>
         </div>
-        <div id="generate-panel" style="margin-bottom:2rem;">
-            <button id="generate-world-btn" class="project-btn" style="margin-right:1rem;background:#ff6b6b;color:#fff;">Generate World Code</button>
-            <button id="generate-codeblock-btn" class="project-btn" style="background:#ff6b6b;color:#fff;">Generate Code-block Code</button>
-            <button id="export-zip-btn" class="project-btn" style="margin-left:1rem;background:#ff6b6b;color:#fff;">Export ZIP</button>
+    </div>
+    <div id="estimate-panel" style="margin-bottom:2rem;">
+        <h4 style="color:#ff6b6b;margin-bottom:0.7rem;">Estimated Output Size</h4>
+        <div>
+            <span>World code: <span id="world-estimate" style="font-weight:bold;color:#ff6b6b;">0</span> / 16,001</span>
+            <span style="margin-left:2rem;">Code-block code: <span id="codeblock-estimate" style="font-weight:bold;color:#ff6b6b;">0</span> / 16,001</span>
         </div>
-        <div id="result-panel" style="margin-bottom:2rem;display:none;">
-            <h4 style="color:#ff6b6b;margin-bottom:0.7rem;">Result</h4>
-            <textarea id="result-output" readonly rows="2" style="width:100%;border-radius:8px;border:1px solid #ff6b6b;padding:0.7rem;font-size:1rem;white-space:nowrap;overflow-x:auto;color:#23243a;background:#fff;"></textarea>
-            <div style="margin-top:0.7rem;">
-                <button id="copy-result-btn" class="project-btn" style="margin-right:0.7rem;background:#ff6b6b;color:#fff;">Copy</button>
-                <button id="download-result-btn" class="project-btn" style="background:#ff6b6b;color:#fff;">Download .txt</button>
-                <span id="result-count" style="margin-left:1.2rem;font-weight:bold;color:#ff6b6b;"></span>
-                <span id="result-indicator" style="margin-left:0.7rem;color:#ff6b6b;"></span>
-                <span id="compressed-label" style="margin-left:1.2rem;display:none;">
-                    <span style="background:#ff6b6b;color:#fff;padding:2px 8px;border-radius:6px;font-size:0.95em;">compressed</span>
-                    <button id="toggle-uncompressed-btn" class="project-btn" style="margin-left:0.5rem;padding:2px 8px;font-size:0.95em;background:#ff6b6b;color:#fff;">Show original</button>
-                </span>
-            </div>
-            <div id="uncompressed-preview" style="margin-top:1rem;display:none;">
-                <textarea readonly rows="6" style="width:100%;border-radius:8px;border:1px solid #ff6b6b;padding:0.7rem;font-size:0.95em;color:#23243a;background:#fff;"></textarea>
-            </div>
-            <div id="result-error" style="color:#ff6b6b;margin-top:1rem;display:none;"></div>
+    </div>
+    <div id="generate-panel" style="margin-bottom:2rem;">
+        <button id="generate-world-btn" class="project-btn" style="margin-right:1rem;background:#ff6b6b;color:#fff;">Generate World Code</button>
+        <button id="generate-codeblock-btn" class="project-btn" style="background:#ff6b6b;color:#fff;">Generate Code-block Code</button>
+        <button id="export-zip-btn" class="project-btn" style="margin-left:1rem;background:#ff6b6b;color:#fff;">Export ZIP</button>
+    </div>
+    <div id="result-panel" style="margin-bottom:2rem;display:none;">
+        <h4 style="color:#ff6b6b;margin-bottom:0.7rem;">Result</h4>
+        <textarea id="result-output" readonly rows="2" style="width:100%;border-radius:8px;border:1px solid #ff6b6b;padding:0.7rem;font-size:1rem;white-space:nowrap;overflow-x:auto;color:#23243a;background:#fff;"></textarea>
+        <div style="margin-top:0.7rem;">
+            <button id="copy-result-btn" class="project-btn" style="margin-right:0.7rem;background:#ff6b6b;color:#fff;">Copy</button>
+            <button id="download-result-btn" class="project-btn" style="background:#ff6b6b;color:#fff;">Download .txt</button>
+            <span id="result-count" style="margin-left:1.2rem;font-weight:bold;color:#ff6b6b;"></span>
+            <span id="result-indicator" style="margin-left:0.7rem;color:#ff6b6b;"></span>
+            <span id="compressed-label" style="margin-left:1.2rem;display:none;">
+                <span style="background:#ff6b6b;color:#fff;padding:2px 8px;border-radius:6px;font-size:0.95em;">compressed</span>
+                <button id="toggle-uncompressed-btn" class="project-btn" style="margin-left:0.5rem;padding:2px 8px;font-size:0.95em;background:#ff6b6b;color:#fff;">Show original</button>
+            </span>
         </div>
-        <div id="help-panel" style="margin-top:2rem;background:#23243a;border-radius:12px;padding:1.2rem;color:#ff6b6b;">
-            <h4 style="color:#ff6b6b;margin-bottom:0.7rem;">Help & Examples</h4>
-            <ul style="margin-bottom:1rem;">
-                <li>Upload multiple <code>.schematick</code>, <code>.bloxdschem</code>, or <code>.json</code> files or paste JSON.</li>
-                <li>Reorder frames, set delay, origin, optimize for size.</li>
-                <li>Preview frames and animation before generating.</li>
-                <li>World code: <code>P,0,0,0,stone;P,1,0,0,stone;W,20;R,0,0,0;P,0,0,0,wood;W,20;...</code></li>
-                <li>Code-block code: <code>var f=[[["P",0,0,0,"stone"],...],[...]];var i=0;function n(){/*apply f[++i]*/};n();</code></li>
-                <li>Max output size: <strong>16,001 characters</strong>. If too large, reduce blocks or optimize.</li>
+        <div id="uncompressed-preview" style="margin-top:1rem;display:none;">
+            <textarea readonly rows="6" style="width:100%;border-radius:8px;border:1px solid #ff6b6b;padding:0.7rem;font-size:0.95em;color:#23243a;background:#fff;"></textarea>
+        </div>
+        <div id="result-error" style="color:#ff6b6b;margin-top:1rem;display:none;"></div>
+    </div>
+    <div id="help-panel" style="margin-top:2rem;background:#23243a;border-radius:12px;padding:1.2rem;color:#ff6b6b;">
+        <h4 style="color:#ff6b6b;margin-bottom:0.7rem;">Help & Examples</h4>
+        <ul style="margin-bottom:1rem;">
+            <li>Upload multiple <code>.schematick</code>, <code>.bloxdschem</code>, or <code>.json</code> files or paste JSON.</li>
+            <li>Reorder frames, set delay, origin, optimize for size.</li>
+            <li>Preview frames and animation before generating.</li>
+            <li>World code: <code>P,0,0,0,stone;P,1,0,0,stone;W,20;R,0,0,0;P,0,0,0,wood;W,20;...</code></li>
+            <li>Code-block code: <code>var f=[[["P",0,0,0,"stone"],...],[...]];var i=0;function n(){/*apply f[++i]*/};n();</code></li>
+            <li>Max output size: <strong>16,001 characters</strong>. If too large, reduce blocks or optimize.</li>
+        </ul>
+        <details>
+            <summary style="color:#ff6b6b;cursor:pointer;">Show advanced tips</summary>
+            <ul>
+                <li>Optimize for size: enables diffing and coordinate packing.</li>
+                <li>ZIP export includes world_code.txt, code_block.txt, frames.json.</li>
+                <li>Delay: Bloxd "ticks" (20 = 1s) or ms for code-block auto-play.</li>
             </ul>
-            <details>
-                <summary style="color:#ff6b6b;cursor:pointer;">Show advanced tips</summary>
-                <ul>
-                    <li>Optimize for size: enables diffing and coordinate packing.</li>
-                    <li>ZIP export includes world_code.txt, code_block.txt, frames.json.</li>
-                    <li>Delay: Bloxd "ticks" (20 = 1s) or ms for code-block auto-play.</li>
-                </ul>
-            </details>
-        </div>
+        </details>
     </div>
 </section>
 <script>
@@ -144,10 +143,21 @@ const compressedLabel = document.getElementById('compressed-label');
 const toggleUncompressedBtn = document.getElementById('toggle-uncompressed-btn');
 const uncompressedPreview = document.getElementById('uncompressed-preview');
 const resultError = document.getElementById('result-error');
-dropArea.addEventListener('dragover',e=>{e.preventDefault();dropArea.style.background='#ff6b6b33';});
-dropArea.addEventListener('dragleave',e=>{dropArea.style.background='#23243a';});
+
+// Drop area hover effect
+dropArea.addEventListener('dragover',e=>{
+    e.preventDefault();
+    dropArea.style.background='#ff6b6b11';
+    dropArea.style.boxShadow='0 8px 32px rgba(255,107,107,0.18)';
+});
+dropArea.addEventListener('dragleave',e=>{
+    dropArea.style.background='#fff';
+    dropArea.style.boxShadow='0 4px 24px rgba(0,0,0,0.12)';
+});
 dropArea.addEventListener('drop',e=>{
-    e.preventDefault();dropArea.style.background='#23243a';
+    e.preventDefault();
+    dropArea.style.background='#fff';
+    dropArea.style.boxShadow='0 4px 24px rgba(0,0,0,0.12)';
     handleFiles(e.dataTransfer.files);
 });
 fileInput.addEventListener('change',()=>handleFiles(fileInput.files));
