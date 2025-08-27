@@ -1,3 +1,576 @@
+<section id="schematick-animator" style="margin-bottom:4rem;">
+    <h3 style="text-align:center;color:var(--accent);margin-bottom:1.2rem;">Bloxd Schematick Animator</h3>
+    <div id="animator-root" style="max-width:900px;margin:0 auto;"></div>
+        <div id="drop-area" tabindex="0" style="border:2px dashed var(--accent);border-radius:12px;padding:2rem;text-align:center;background:rgba(45,46,74,0.7);color:#fff;cursor:pointer;margin-bottom:1.5rem;">
+            <strong>Drop schematick, bloxdschem, or JSON files here or paste JSON below</strong>
+            <br>
+            <input type="file" id="file-input" multiple accept=".schematick,.bloxdschem,.json" style="margin-top:1rem;">
+            <br>
+            <textarea id="json-input" placeholder="Paste raw schematick/bloxdschem JSON here..." rows="3" style="width:100%;margin-top:1rem;border-radius:8px;border:1px solid var(--accent);padding:0.7rem;font-size:1rem;"></textarea>
+            <br>
+            <button id="add-json-btn" class="project-btn" style="margin-top:0.7rem;">Add JSON as Frame</button>
+            <div id="drop-error" style="color:#ff6b6b;margin-top:0.7rem;display:none;"></div>
+        </div>
+        <div id="frames-panel" style="margin-bottom:2rem;">
+            <h4 style="color:var(--accent);margin-bottom:0.7rem;">Frames</h4>
+            <div id="frames-list"></div>
+            <div id="frame-controls" style="margin-top:1rem;display:none;">
+                <button id="prev-frame-btn" class="project-btn" style="margin-right:0.5rem;">Prev frame</button>
+                <button id="next-frame-btn" class="project-btn" style="margin-right:0.5rem;">Next frame</button>
+                <button id="play-frame-btn" class="project-btn">Play</button>
+                <span id="frame-info" style="margin-left:1.2rem;color:#fff;"></span>
+            </div>
+            <canvas id="frame-preview" width="180" height="120" style="display:none;margin-top:1rem;border-radius:8px;background:#23243a;"></canvas>
+        </div>
+        <div id="settings-panel" style="margin-bottom:2rem;">
+            <h4 style="color:var(--accent);margin-bottom:0.7rem;">Settings</h4>
+            <div style="display:flex;flex-wrap:wrap;gap:1.2rem;">
+                <div>
+                    <label style="color:#fff;">Global Origin Offset:</label>
+                    <input type="number" id="origin-x" value="0" style="width:50px;">
+                    <input type="number" id="origin-y" value="0" style="width:50px;">
+                    <input type="number" id="origin-z" value="0" style="width:50px;">
+                    <button id="align-origin-btn" class="project-btn" style="margin-left:0.5rem;">Align to origin</button>
+                </div>
+                <div>
+                    <label style="color:#fff;">Delay between frames:</label>
+                    <input type="number" id="frame-delay" value="20" min="1" style="width:70px;">
+                    <span title="Ticks (20 = 1s) or ms, depending on Bloxd context" style="color:#aaa;cursor:help;">?</span>
+                </div>
+                <div>
+                    <label style="color:#fff;">Loop:</label>
+                    <input type="checkbox" id="loop-checkbox" checked>
+                </div>
+                <div>
+                    <label style="color:#fff;">Optimize for size:</label>
+                    <input type="checkbox" id="optimize-checkbox" checked>
+                </div>
+                <div>
+                    <button id="fit-largest-btn" class="project-btn" style="margin-left:0.5rem;">Fit to largest</button>
+                    <button id="align-centers-btn" class="project-btn" style="margin-left:0.5rem;">Align centers</button>
+                </div>
+            </div>
+        </div>
+        <div id="estimate-panel" style="margin-bottom:2rem;">
+            <h4 style="color:var(--accent);margin-bottom:0.7rem;">Estimated Output Size</h4>
+            <div>
+                <span>World code: <span id="world-estimate" style="font-weight:bold;color:#fff;">0</span> / 16,001</span>
+                <span style="margin-left:2rem;">Code-block code: <span id="codeblock-estimate" style="font-weight:bold;color:#fff;">0</span> / 16,001</span>
+            </div>
+        </div>
+        <div id="generate-panel" style="margin-bottom:2rem;">
+            <button id="generate-world-btn" class="project-btn" style="margin-right:1rem;">Generate World Code</button>
+            <button id="generate-codeblock-btn" class="project-btn">Generate Code-block Code</button>
+            <button id="export-zip-btn" class="project-btn" style="margin-left:1rem;">Export ZIP</button>
+        </div>
+        <div id="result-panel" style="margin-bottom:2rem;display:none;">
+            <h4 style="color:var(--accent);margin-bottom:0.7rem;">Result</h4>
+            <textarea id="result-output" readonly rows="2" style="width:100%;border-radius:8px;border:1px solid var(--accent);padding:0.7rem;font-size:1rem;white-space:nowrap;overflow-x:auto;"></textarea>
+            <div style="margin-top:0.7rem;">
+                <button id="copy-result-btn" class="project-btn" style="margin-right:0.7rem;">Copy</button>
+                <button id="download-result-btn" class="project-btn">Download .txt</button>
+                <span id="result-count" style="margin-left:1.2rem;font-weight:bold;"></span>
+                <span id="result-indicator" style="margin-left:0.7rem;"></span>
+                <span id="compressed-label" style="margin-left:1.2rem;display:none;">
+                    <span style="background:var(--accent);color:#23243a;padding:2px 8px;border-radius:6px;font-size:0.95em;">compressed</span>
+                    <button id="toggle-uncompressed-btn" class="project-btn" style="margin-left:0.5rem;padding:2px 8px;font-size:0.95em;">Show original</button>
+                </span>
+            </div>
+            <div id="uncompressed-preview" style="margin-top:1rem;display:none;">
+                <textarea readonly rows="6" style="width:100%;border-radius:8px;border:1px solid var(--accent);padding:0.7rem;font-size:0.95em;"></textarea>
+            </div>
+            <div id="result-error" style="color:#ff6b6b;margin-top:1rem;display:none;"></div>
+        </div>
+        <div id="help-panel" style="margin-top:2rem;background:rgba(45,46,74,0.7);border-radius:12px;padding:1.2rem;color:#fff;">
+            <h4 style="color:var(--accent);margin-bottom:0.7rem;">Help & Examples</h4>
+            <ul style="margin-bottom:1rem;">
+                <li>Upload multiple <code>.schematick</code>, <code>.bloxdschem</code>, or <code>.json</code> files or paste JSON.</li>
+                <li>Reorder frames, set delay, origin, optimize for size.</li>
+                <li>Preview frames and animation before generating.</li>
+                <li>World code: <code>P,0,0,0,stone;P,1,0,0,stone;W,20;R,0,0,0;P,0,0,0,wood;W,20;...</code></li>
+                <li>Code-block code: <code>var f=[[["P",0,0,0,"stone"],...],[...]];var i=0;function n(){/*apply f[++i]*/};n();</code></li>
+                <li>Max output size: <strong>16,001 characters</strong>. If too large, reduce blocks or optimize.</li>
+            </ul>
+            <details>
+                <summary style="color:var(--accent);cursor:pointer;">Show advanced tips</summary>
+                <ul>
+                    <li>Optimize for size: enables diffing and coordinate packing.</li>
+                    <li>ZIP export includes world_code.txt, code_block.txt, frames.json.</li>
+                    <li>Delay: Bloxd "ticks" (20 = 1s) or ms for code-block auto-play.</li>
+                </ul>
+            </details>
+        </div>
+    </div>
+</section>
+<script>
+let frames = [];
+let selectedFrame = 0;
+let playing = false;
+let playTimer = null;
+let lastGenerated = {type:'', output:'', compressed:false, uncompressed:''};
+const dropArea = document.getElementById('drop-area');
+const fileInput = document.getElementById('file-input');
+const jsonInput = document.getElementById('json-input');
+const addJsonBtn = document.getElementById('add-json-btn');
+const dropError = document.getElementById('drop-error');
+const framesList = document.getElementById('frames-list');
+const frameControls = document.getElementById('frame-controls');
+const prevFrameBtn = document.getElementById('prev-frame-btn');
+const nextFrameBtn = document.getElementById('next-frame-btn');
+const playFrameBtn = document.getElementById('play-frame-btn');
+const frameInfo = document.getElementById('frame-info');
+const framePreview = document.getElementById('frame-preview');
+const originX = document.getElementById('origin-x');
+const originY = document.getElementById('origin-y');
+const originZ = document.getElementById('origin-z');
+const alignOriginBtn = document.getElementById('align-origin-btn');
+const fitLargestBtn = document.getElementById('fit-largest-btn');
+const alignCentersBtn = document.getElementById('align-centers-btn');
+const frameDelay = document.getElementById('frame-delay');
+const loopCheckbox = document.getElementById('loop-checkbox');
+const optimizeCheckbox = document.getElementById('optimize-checkbox');
+const worldEstimate = document.getElementById('world-estimate');
+const codeblockEstimate = document.getElementById('codeblock-estimate');
+const generateWorldBtn = document.getElementById('generate-world-btn');
+const generateCodeblockBtn = document.getElementById('generate-codeblock-btn');
+const exportZipBtn = document.getElementById('export-zip-btn');
+const resultPanel = document.getElementById('result-panel');
+const resultOutput = document.getElementById('result-output');
+const copyResultBtn = document.getElementById('copy-result-btn');
+const downloadResultBtn = document.getElementById('download-result-btn');
+const resultCount = document.getElementById('result-count');
+const resultIndicator = document.getElementById('result-indicator');
+const compressedLabel = document.getElementById('compressed-label');
+const toggleUncompressedBtn = document.getElementById('toggle-uncompressed-btn');
+const uncompressedPreview = document.getElementById('uncompressed-preview');
+const resultError = document.getElementById('result-error');
+dropArea.addEventListener('dragover',e=>{e.preventDefault();dropArea.style.background='#00ffd033';});
+dropArea.addEventListener('dragleave',e=>{dropArea.style.background='rgba(45,46,74,0.7)';});
+dropArea.addEventListener('drop',e=>{
+    e.preventDefault();dropArea.style.background='rgba(45,46,74,0.7)';
+    handleFiles(e.dataTransfer.files);
+});
+fileInput.addEventListener('change',()=>handleFiles(fileInput.files));
+addJsonBtn.addEventListener('click',()=>{
+    let txt=jsonInput.value.trim();
+    if(!txt)return;
+    try{
+        let obj=JSON.parse(txt);
+        let frame=parseSchematick(obj,'JSON-'+(frames.length+1));
+        if(frame){frames.push(frame);updateFramesUI();jsonInput.value='';dropError.style.display='none';}
+        else{dropError.textContent='Invalid schematick/bloxdschem JSON.';dropError.style.display='block';}
+    }catch(e){dropError.textContent='Invalid JSON.';dropError.style.display='block';}
+});
+function handleFiles(fileList){
+    dropError.style.display='none';
+    let promises=[];
+    for(let f of fileList){
+        let ext = f.name.split('.').pop().toLowerCase();
+        if(['schematick','bloxdschem','json'].includes(ext)){
+            promises.push(new Promise(res=>{
+                let reader=new FileReader();
+                reader.onload=()=>{try{
+                    let obj=JSON.parse(reader.result);
+                    let frame=parseSchematick(obj,f.name);
+                    if(frame)res(frame);
+                    else{dropError.textContent='Invalid schematick/bloxdschem in '+f.name;dropError.style.display='block';res(null);}
+                }catch(e){dropError.textContent='Invalid JSON in '+f.name;dropError.style.display='block';res(null);}};
+                reader.readAsText(f);
+            }));
+        }else{
+            dropError.textContent='Unsupported file type: '+f.name;dropError.style.display='block';
+        }
+    }
+    Promise.all(promises).then(arr=>{
+        arr.forEach(f=>{if(f)frames.push(f);});
+        updateFramesUI();
+    });
+}
+function parseSchematick(obj,name){
+    let blocks=null,origin={x:0,y:0,z:0};
+    if(obj.blocks&&Array.isArray(obj.blocks))blocks=obj.blocks;
+    else if(obj.schematic&&obj.schematic.blocks)blocks=obj.schematic.blocks;
+    else{
+        for(let k in obj){
+            if(Array.isArray(obj[k])&&obj[k][0]&&typeof obj[k][0]=='object'&&'x'in obj[k][0]&&'y'in obj[k][0]&&'z'in obj[k][0]&&('id'in obj[k][0]||'name'in obj[k][0])){
+                blocks=obj[k];break;
+            }
+        }
+    }
+    if(!blocks)return null;
+    if(obj.origin&&typeof obj.origin=='object')origin=obj.origin;
+    else if(obj.schematic&&obj.schematic.origin)origin=obj.schematic.origin;
+    let normBlocks=[];
+    for(let b of blocks){
+        let x=Number(b.x),y=Number(b.y),z=Number(b.z),id=b.id||b.name;
+        if(isNaN(x)||isNaN(y)||isNaN(z)||!id)continue;
+        normBlocks.push({x,y,z,id});
+    }
+    if(normBlocks.length==0)return null;
+    let bbox=getBoundingBox(normBlocks);
+    return {name,blocks:normBlocks,origin,bbox,previewData:null};
+}
+function getBoundingBox(blocks){
+    let min={x:Infinity,y:Infinity,z:Infinity},max={x:-Infinity,y:-Infinity,z:-Infinity};
+    for(let b of blocks){
+        if(b.x<min.x)min.x=b.x;if(b.y<min.y)min.y=b.y;if(b.z<min.z)min.z=b.z;
+        if(b.x>max.x)max.x=b.x;if(b.y>max.y)max.y=b.y;if(b.z>max.z)max.z=b.z;
+    }
+    return {min,max};
+}
+function normalizeFrames(framesArr,originOverride){
+    let min={x:Infinity,y:Infinity,z:Infinity};
+    for(let f of framesArr){
+        for(let b of f.blocks){
+            if(b.x<min.x)min.x=b.x;if(b.y<min.y)min.y=b.y;if(b.z<min.z)min.z=b.z;
+        }
+    }
+    let origin=originOverride?originOverride:min;
+    let out=[];
+    for(let f of framesArr){
+        let blocks=f.blocks.map(b=>({
+            x:b.x-origin.x+Number(originX.value),
+            y:b.y-origin.y+Number(originY.value),
+            z:b.z-origin.z+Number(originZ.value),
+            id:b.id
+        }));
+        let bbox=getBoundingBox(blocks);
+        out.push({name:f.name,blocks,origin:{x:origin.x,y:origin.y,z:origin.z},bbox,previewData:null});
+    }
+    return out;
+}
+function updateFramesUI(){
+    frames=normalizeFrames(frames);
+    framesList.innerHTML='';
+    frames.forEach((f,i)=>{
+        let div=document.createElement('div');
+        div.className='frame-card';
+        div.style='background:var(--card-bg);border-radius:8px;padding:1rem;margin-bottom:0.7rem;display:flex;align-items:center;gap:1.2rem;';
+        div.innerHTML=`
+            <div style="flex:1;">
+                <strong style="color:var(--accent);">${f.name}</strong>
+                <div style="color:#fff;font-size:0.98em;">Blocks: ${f.blocks.length}, Box: [${f.bbox.min.x},${f.bbox.min.y},${f.bbox.min.z}]→[${f.bbox.max.x},${f.bbox.max.y},${f.bbox.max.z}]</div>
+            </div>
+            <button class="project-btn" data-move="up" data-idx="${i}" style="padding:2px 8px;">↑</button>
+            <button class="project-btn" data-move="down" data-idx="${i}" style="padding:2px 8px;">↓</button>
+            <button class="project-btn" data-remove="${i}" style="padding:2px 8px;background:#ff6b6b;">✕</button>
+            <button class="project-btn" data-select="${i}" style="padding:2px 8px;background:#00ffd0;color:#23243a;">Select</button>
+        `;
+        framesList.appendChild(div);
+    });
+    framesList.querySelectorAll('[data-move]').forEach(btn=>{
+        btn.onclick=()=>{
+            let idx=Number(btn.dataset.idx);
+            if(btn.dataset.move=='up'&&idx>0){[frames[idx-1],frames[idx]]=[frames[idx],frames[idx-1]];}
+            if(btn.dataset.move=='down'&&idx<frames.length-1){[frames[idx+1],frames[idx]]=[frames[idx],frames[idx+1]];}
+            updateFramesUI();
+        };
+    });
+    framesList.querySelectorAll('[data-remove]').forEach(btn=>{
+        btn.onclick=()=>{
+            let idx=Number(btn.dataset.remove);
+            frames.splice(idx,1);
+            if(selectedFrame>=frames.length)selectedFrame=frames.length-1;
+            updateFramesUI();
+        };
+    });
+    framesList.querySelectorAll('[data-select]').forEach(btn=>{
+        btn.onclick=()=>{
+            selectedFrame=Number(btn.dataset.select);
+            showFramePreview();
+        };
+    });
+    if(frames.length>0){
+        frameControls.style.display='';
+        showFramePreview();
+    }else{
+        frameControls.style.display='none';
+        framePreview.style.display='none';
+    }
+    updateEstimates();
+}
+function showFramePreview(){
+    if(frames.length==0)return;
+    let f=frames[selectedFrame];
+    frameInfo.textContent=`Frame ${selectedFrame+1}/${frames.length} (${f.blocks.length} blocks)`;
+    framePreview.style.display='';
+    drawFramePreview(f.blocks,framePreview);
+}
+function drawFramePreview(blocks,canvas){
+    let ctx=canvas.getContext('2d');
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+    let minX=Infinity,maxX=-Infinity,minZ=Infinity,maxZ=-Infinity;
+    for(let b of blocks){
+        if(b.x<minX)minX=b.x;if(b.x>maxX)maxX=b.x;
+        if(b.z<minZ)minZ=b.z;if(b.z>maxZ)maxZ=b.z;
+    }
+    let dx=maxX-minX+1, dz=maxZ-minZ+1;
+    let scale=Math.min(canvas.width/(dx+2),canvas.height/(dz+2));
+    for(let b of blocks){
+        let x=(b.x-minX+1)*scale, z=(b.z-minZ+1)*scale;
+        ctx.fillStyle='#00ffd0';
+        ctx.fillRect(x,z,scale*0.7,scale*0.7);
+    }
+    ctx.strokeStyle='#fff';
+    ctx.strokeRect(scale,scale,dx*scale,dz*scale);
+}
+prevFrameBtn.onclick=()=>{if(selectedFrame>0){selectedFrame--;showFramePreview();}};
+nextFrameBtn.onclick=()=>{if(selectedFrame<frames.length-1){selectedFrame++;showFramePreview();}};
+playFrameBtn.onclick=()=>{
+    if(playing){playing=false;playFrameBtn.textContent='Play';clearTimeout(playTimer);}
+    else{playing=true;playFrameBtn.textContent='Pause';playFrames();}
+};
+function playFrames(){
+    if(!playing)return;
+    selectedFrame=(selectedFrame+1)%frames.length;
+    showFramePreview();
+    playTimer=setTimeout(playFrames,Number(frameDelay.value)*50);
+}
+alignOriginBtn.onclick=()=>{
+    let min={x:Infinity,y:Infinity,z:Infinity};
+    for(let f of frames){
+        for(let b of f.blocks){
+            if(b.x<min.x)min.x=b.x;if(b.y<min.y)min.y=b.y;if(b.z<min.z)min.z=b.z;
+        }
+    }
+    originX.value=0;originY.value=0;originZ.value=0;
+    updateFramesUI();
+};
+fitLargestBtn.onclick=()=>{
+    let min={x:Infinity,y:Infinity,z:Infinity},max={x:-Infinity,y:-Infinity,z:-Infinity};
+    for(let f of frames){
+        for(let b of f.blocks){
+            if(b.x<min.x)min.x=b.x;if(b.y<min.y)min.y=b.y;if(b.z<min.z)min.z=b.z;
+            if(b.x>max.x)max.x=b.x;if(b.y>max.y)max.y=b.y;if(b.z>max.z)max.z=b.z;
+        }
+    }
+    originX.value=0;originY.value=0;originZ.value=0;
+    updateFramesUI();
+};
+alignCentersBtn.onclick=()=>{
+    let min={x:Infinity,y:Infinity,z:Infinity},max={x:-Infinity,y:-Infinity,z:-Infinity};
+    for(let f of frames){
+        for(let b of f.blocks){
+            if(b.x<min.x)min.x=b.x;if(b.y<min.y)min.y=b.y;if(b.z<min.z)min.z=b.z;
+            if(b.x>max.x)max.x=b.x;if(b.y>max.y)max.y=b.y;if(b.z>max.z)max.z=b.z;
+        }
+    }
+    let cx=Math.floor((min.x+max.x)/2),cy=Math.floor((min.y+max.y)/2),cz=Math.floor((min.z+max.z)/2);
+    originX.value=-cx;originY.value=-cy;originZ.value=-cz;
+    updateFramesUI();
+};
+function updateEstimates(){
+    let norm=normalizeFrames(frames);
+    let worldLen=estimateLength(norm,'world');
+    let codeblockLen=estimateLength(norm,'codeblock');
+    worldEstimate.textContent=worldLen;
+    codeblockEstimate.textContent=codeblockLen;
+    worldEstimate.style.color=worldLen<=16001?'#00ffd0':'#ff6b6b';
+    codeblockEstimate.style.color=codeblockLen<=16001?'#00ffd0':'#ff6b6b';
+}
+function estimateLength(framesArr,type){
+    let total=0;
+    if(framesArr.length==0)return 0;
+    let delay=String(frameDelay.value).length+3;
+    let prev={};
+    for(let i=0;i<framesArr.length;i++){
+        let f=framesArr[i];
+        let diff=computeDiffs(f.blocks,prev);
+        for(let op of diff){
+            if(op.t=='P')total+=('P,'+op.x+','+op.y+','+op.z+','+op.id+';').length;
+            else if(op.t=='R')total+=('R,'+op.x+','+op.y+','+op.z+';').length;
+        }
+        total+=('W,'+frameDelay.value+';').length;
+        prev={};for(let b of f.blocks)prev[b.x+','+b.y+','+b.z]=b.id;
+    }
+    if(loopCheckbox.checked)total+=10;
+    if(type=='codeblock')total+=200+framesArr.length*10;
+    return total;
+}
+function computeDiffs(blocks,prevBlocks){
+    let ops=[];
+    let curr={};
+    for(let b of blocks)curr[b.x+','+b.y+','+b.z]=b.id;
+    for(let k in curr){
+        if(!prevBlocks[k]||prevBlocks[k]!=curr[k]){
+            let [x,y,z]=k.split(',').map(Number);
+            ops.push({t:'P',x,y,z,id:curr[k]});
+        }
+    }
+    for(let k in prevBlocks){
+        if(!curr[k]){
+            let [x,y,z]=k.split(',').map(Number);
+            ops.push({t:'R',x,y,z});
+        }
+    }
+    return ops;
+}
+generateWorldBtn.onclick=()=>generateOutput('world');
+generateCodeblockBtn.onclick=()=>generateOutput('codeblock');
+function generateOutput(type){
+    if(frames.length==0){showResultError('Please upload at least one schematick or bloxdschem.');return;}
+    let norm=normalizeFrames(frames);
+    let optimize=optimizeCheckbox.checked;
+    let out='',uncompressed='',compressed=false;
+    if(type=='world'){
+        let res=generateWorldString(norm,optimize);
+        out=res.output;uncompressed=res.uncompressed;compressed=res.compressed;
+        if(out.length>16001){
+            showResultError('Sorry, the build is too big for World code');
+            return;
+        }
+    }else{
+        let res=generateCodeBlockString(norm,optimize);
+        out=res.output;uncompressed=res.uncompressed;compressed=res.compressed;
+        if(out.length>16001){
+            showResultError('Sorry, not enough space for Code-block code');
+            return;
+        }
+    }
+    showResult(out,type,compressed,uncompressed);
+}
+function showResultError(msg){
+    resultPanel.style.display='';
+    resultOutput.value='';
+    resultCount.textContent='';
+    resultIndicator.textContent='';
+    compressedLabel.style.display='none';
+    uncompressedPreview.style.display='none';
+    resultError.textContent=msg;
+    resultError.style.display='block';
+}
+function showResult(out,type,compressed,uncompressed){
+    resultPanel.style.display='';
+    resultOutput.value=out;
+    resultCount.textContent='Characters: '+out.length+' / 16,001';
+    resultIndicator.textContent=out.length<=16001?'✅':'❌';
+    resultIndicator.style.color=out.length<=16001?'#00ffd0':'#ff6b6b';
+    resultError.style.display='none';
+    compressedLabel.style.display=compressed?'':'none';
+    uncompressedPreview.style.display='none';
+    lastGenerated={type,output:out,compressed,uncompressed};
+}
+copyResultBtn.onclick=()=>{resultOutput.select();document.execCommand('copy');};
+downloadResultBtn.onclick=()=>{
+    let blob=new Blob([resultOutput.value],{type:'text/plain'});
+    let a=document.createElement('a');
+    a.href=URL.createObjectURL(blob);
+    a.download=lastGenerated.type=='world'?'world_code.txt':'code_block.txt';
+    a.click();
+};
+toggleUncompressedBtn.onclick=()=>{
+    if(uncompressedPreview.style.display=='none'){
+        uncompressedPreview.style.display='';
+        uncompressedPreview.querySelector('textarea').value=lastGenerated.uncompressed;
+        toggleUncompressedBtn.textContent='Hide original';
+    }else{
+        uncompressedPreview.style.display='none';
+        toggleUncompressedBtn.textContent='Show original';
+    }
+};
+exportZipBtn.onclick=()=>{
+    if(frames.length==0)return;
+    let zipObj={};
+    let norm=normalizeFrames(frames);
+    let w=generateWorldString(norm,optimizeCheckbox.checked);
+    let c=generateCodeBlockString(norm,optimizeCheckbox.checked);
+    zipObj['world_code.txt']=w.output;
+    zipObj['code_block.txt']=c.output;
+    zipObj['frames.json']=JSON.stringify(norm,null,2);
+    createZip(zipObj);
+};
+function createZip(files){
+    let JSZip=function(){this.files={};this.file=function(n,c){this.files[n]=c;};this.generateAsync=function(){let parts=[];for(let n in this.files){parts.push(this.files[n]);}return Promise.resolve(new Blob(parts,{type:'application/zip'}));};};
+    let zip=new JSZip();
+    for(let n in files)zip.file(n,files[n]);
+    zip.generateAsync().then(blob=>{
+        let a=document.createElement('a');
+        a.href=URL.createObjectURL(blob);
+        a.download='schematick_animator.zip';
+        a.click();
+    });
+}
+function generateWorldString(framesArr,optimize){
+    let out='',uncompressed='',compressed=false;
+    let prev={};
+    for(let i=0;i<framesArr.length;i++){
+        let f=framesArr[i];
+        let diff=computeDiffs(f.blocks,prev);
+        for(let op of diff){
+            out+='P,'+op.x+','+op.y+','+op.z+','+op.id+';';
+            uncompressed+='P,'+op.x+','+op.y+','+op.z+','+op.id+';\n';
+        }
+        out+='W,'+frameDelay.value+';';
+        uncompressed+='W,'+frameDelay.value+';\n';
+        prev={};for(let b of f.blocks)prev[b.x+','+b.y+','+b.z]=b.id;
+    }
+    if(loopCheckbox.checked)out+='L;';
+    if(optimize&&out.length>16001){
+        let cmp=compressStringIfNeeded(out);
+        if(cmp.output.length<=16001){
+            out=cmp.decompressor+cmp.output;
+            compressed=true;
+        }
+    }
+    return {output:out,uncompressed,compressed};
+}
+function generateCodeBlockString(framesArr,optimize){
+    let fArr=[];
+    let prev={};
+    for(let i=0;i<framesArr.length;i++){
+        let f=framesArr[i];
+        let diff=computeDiffs(f.blocks,prev);
+        let ops=[];
+        for(let op of diff){
+            if(op.t=='P')ops.push(['P',op.x,op.y,op.z,op.id]);
+            else if(op.t=='R')ops.push(['R',op.x,op.y,op.z]);
+        }
+        fArr.push(ops);
+        prev={};for(let b of f.blocks)prev[b.x+','+b.y+','+b.z]=b.id;
+    }
+    let code='var f='+JSON.stringify(fArr)+';var i=0;function n(){for(var j=0;j<f[i].length;j++){var o=f[i][j];if(o[0]=="P")setBlock(o[1],o[2],o[3],o[4]);else setBlock(o[1],o[2],o[3],"air");}wait('+frameDelay.value+');i='+(loopCheckbox.checked?'(i+1)%f.length':'Math.min(i+1,f.length-1)')+';}';
+    let uncompressed=code;
+    let compressed=false;
+    if(optimize&&code.length>16001){
+        let cmp=compressStringIfNeeded(code);
+        if(cmp.output.length<=16001){
+            code=cmp.decompressor+cmp.output;
+            compressed=true;
+        }
+    }
+    return {output:code,uncompressed,compressed};
+}
+function compressStringIfNeeded(str){
+    let out='',decompressor='';
+    let arr=str.split(';');
+    let gp=[];
+    for(let i=0;i<arr.length;i++){
+        let s=arr[i];
+        if(s.startsWith('P,')){
+            let parts=s.split(',');
+            let id=parts[4];
+            let key=id;
+            if(gp.length==0||gp[0]!=key)gp=[key,[]];
+            gp[1].push(parts.slice(1,4).join(','));
+            let next=arr[i+1]&&arr[i+1].startsWith('P,')?arr[i+1].split(',')[4]:null;
+            if(next!=key){
+                if(gp[1].length>2){
+                    out+='GP,'+gp[0]+','+gp[1].length+','+gp[1].join(',')+';';
+                }else{
+                    for(let c of gp[1])out+='P,'+c+','+gp[0]+';';
+                }
+                gp=[];
+            }
+        }else{
+            out+=s+';';
+        }
+    }
+    decompressor='(function(s){s=s.split(";");for(var i=0;i<s.length;i++){if(s[i].startsWith("GP,")){var p=s[i].split(",");var id=p[1],n=+p[2];for(var j=0;j<n;j++){setBlock(+p[3+j*3],+p[4+j*3],+p[5+j*3],id);}}else if(s[i].startsWith("P,")){var p=s[i].split(",");setBlock(+p[1],+p[2],+p[3],p[4]);}else if(s[i].startsWith("R,")){var p=s[i].split(",");setBlock(+p[1],+p[2],+p[3],"air");}else if(s[i].startsWith("W,")){wait(+s[i].split(",")[1]);}}})("';
+    return {output:out+'")',decompressor,decompressed:true};
+}
+</script>
+
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
