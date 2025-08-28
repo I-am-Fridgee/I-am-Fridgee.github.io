@@ -1,922 +1,323 @@
-<section id="schematick-animator" style="margin-bottom:4rem;">
-    <h3 style="text-align:center;color:var(--accent);margin-bottom:1.2rem;">Bloxd Schematick Animator</h3>
-    <div id="animator-root" style="max-width:900px;margin:0 auto;"></div>
-    <div id="drop-area" tabindex="0" style="border:3px dashed #ff6b6b;border-radius:14px;padding:2rem;text-align:center;background:transparent;color:#000;cursor:pointer;margin-bottom:1.5rem;box-shadow:0 4px 24px rgba(0,0,0,0.12);z-index:10;position:relative;transition:background 0.2s;"></div>
-        <strong>Drop <span style="color:#ff6b6b">schematick</span>, <span style="color:#ff6b6b">bloxdschem</span>, or <span style="color:#ff6b6b">JSON</span> files here or paste JSON below</strong>
-        <br>
-        <input type="file" id="file-input" multiple accept=".schematick,.bloxdschem,.json" style="margin-top:1rem;">
-        <br>
-        <textarea id="json-input" placeholder="Paste raw schematick/bloxdschem JSON here..." rows="3" style="width:100%;margin-top:1rem;border-radius:8px;border:1px solid #ff6b6b;padding:0.7rem;font-size:1rem;color:#23243a;background:#fff;"></textarea>
-        <br>
-        <button id="add-json-btn" class="project-btn" style="margin-top:0.7rem;background:#ff6b6b;color:#fff;">Add JSON as Frame</button>
-        <div id="drop-error" style="color:#ff6b6b;margin-top:0.7rem;display:none;"></div>
-    </div>
-    <div id="frames-panel" style="margin-bottom:2rem;">
-        <h4 style="color:#ff6b6b;margin-bottom:0.7rem;">Frames</h4>
-        <div id="frames-list"></div>
-        <div id="frame-controls" style="margin-top:1rem;display:none;">
-            <button id="prev-frame-btn" class="project-btn" style="margin-right:0.5rem;background:#ff6b6b;color:#fff;">Prev frame</button>
-            <button id="next-frame-btn" class="project-btn" style="margin-right:0.5rem;background:#ff6b6b;color:#fff;">Next frame</button>
-            <button id="play-frame-btn" class="project-btn" style="background:#ff6b6b;color:#fff;">Play</button>
-            <span id="frame-info" style="margin-left:1.2rem;color:#ff6b6b;"></span>
-        </div>
-        <canvas id="frame-preview" width="180" height="120" style="display:none;margin-top:1rem;border-radius:8px;background:#fff;"></canvas>
-    </div>
-    <div id="settings-panel" style="margin-bottom:2rem;">
-        <h4 style="color:#ff6b6b;margin-bottom:0.7rem;">Settings</h4>
-        <div style="display:flex;flex-wrap:wrap;gap:1.2rem;">
-            <div>
-                <label style="color:#ff6b6b;">Global Origin Offset:</label>
-                <input type="number" id="origin-x" value="0" style="width:50px;">
-                <input type="number" id="origin-y" value="0" style="width:50px;">
-                <input type="number" id="origin-z" value="0" style="width:50px;">
-                <button id="align-origin-btn" class="project-btn" style="margin-left:0.5rem;background:#ff6b6b;color:#fff;">Align to origin</button>
-            </div>
-            <div>
-                <label style="color:#ff6b6b;">Delay between frames:</label>
-                <input type="number" id="frame-delay" value="20" min="1" style="width:70px;">
-                <span title="Ticks (20 = 1s) or ms, depending on Bloxd context" style="color:#ff6b6b;cursor:help;">?</span>
-            </div>
-            <div>
-                <label style="color:#ff6b6b;">Loop:</label>
-                <input type="checkbox" id="loop-checkbox" checked>
-            </div>
-            <div>
-                <label style="color:#ff6b6b;">Optimize for size:</label>
-                <input type="checkbox" id="optimize-checkbox" checked>
-            </div>
-            <div>
-                <button id="fit-largest-btn" class="project-btn" style="margin-left:0.5rem;background:#ff6b6b;color:#fff;">Fit to largest</button>
-                <button id="align-centers-btn" class="project-btn" style="margin-left:0.5rem;background:#ff6b6b;color:#fff;">Align centers</button>
-            </div>
-        </div>
-    </div>
-    <div id="estimate-panel" style="margin-bottom:2rem;">
-        <h4 style="color:#ff6b6b;margin-bottom:0.7rem;">Estimated Output Size</h4>
-        <div>
-            <span>World code: <span id="world-estimate" style="font-weight:bold;color:#ff6b6b;">0</span> / 16,001</span>
-            <span style="margin-left:2rem;">Code-block code: <span id="codeblock-estimate" style="font-weight:bold;color:#ff6b6b;">0</span> / 16,001</span>
-        </div>
-    </div>
-    <div id="generate-panel" style="margin-bottom:2rem;">
-        <button id="generate-world-btn" class="project-btn" style="margin-right:1rem;background:#ff6b6b;color:#fff;">Generate World Code</button>
-        <button id="generate-codeblock-btn" class="project-btn" style="background:#ff6b6b;color:#fff;">Generate Code-block Code</button>
-        <button id="export-zip-btn" class="project-btn" style="margin-left:1rem;background:#ff6b6b;color:#fff;">Export ZIP</button>
-    </div>
-    <div id="result-panel" style="margin-bottom:2rem;display:none;">
-        <h4 style="color:#ff6b6b;margin-bottom:0.7rem;">Result</h4>
-        <textarea id="result-output" readonly rows="2" style="width:100%;border-radius:8px;border:1px solid #ff6b6b;padding:0.7rem;font-size:1rem;white-space:nowrap;overflow-x:auto;color:#23243a;background:#fff;"></textarea>
-        <div style="margin-top:0.7rem;">
-            <button id="copy-result-btn" class="project-btn" style="margin-right:0.7rem;background:#ff6b6b;color:#fff;">Copy</button>
-            <button id="download-result-btn" class="project-btn" style="background:#ff6b6b;color:#fff;">Download .txt</button>
-            <span id="result-count" style="margin-left:1.2rem;font-weight:bold;color:#ff6b6b;"></span>
-            <span id="result-indicator" style="margin-left:0.7rem;color:#ff6b6b;"></span>
-            <span id="compressed-label" style="margin-left:1.2rem;display:none;">
-                <span style="background:#ff6b6b;color:#fff;padding:2px 8px;border-radius:6px;font-size:0.95em;">compressed</span>
-                <button id="toggle-uncompressed-btn" class="project-btn" style="margin-left:0.5rem;padding:2px 8px;font-size:0.95em;background:#ff6b6b;color:#fff;">Show original</button>
-            </span>
-        </div>
-        <div id="uncompressed-preview" style="margin-top:1rem;display:none;">
-            <textarea readonly rows="6" style="width:100%;border-radius:8px;border:1px solid #ff6b6b;padding:0.7rem;font-size:0.95em;color:#23243a;background:#fff;"></textarea>
-        </div>
-        <div id="result-error" style="color:#ff6b6b;margin-top:1rem;display:none;"></div>
-    </div>
-    <div id="help-panel" style="margin-top:2rem;background:#23243a;border-radius:12px;padding:1.2rem;color:#ff6b6b;">
-        <h4 style="color:#ff6b6b;margin-bottom:0.7rem;">Help & Examples</h4>
-        <ul style="margin-bottom:1rem;">
-            <li>Upload multiple <code>.schematick</code>, <code>.bloxdschem</code>, or <code>.json</code> files or paste JSON.</li>
-            <li>Reorder frames, set delay, origin, optimize for size.</li>
-            <li>Preview frames and animation before generating.</li>
-            <li>World code: <code>P,0,0,0,stone;P,1,0,0,stone;W,20;R,0,0,0;P,0,0,0,wood;W,20;...</code></li>
-            <li>Code-block code: <code>var f=[[["P",0,0,0,"stone"],...],[...]];var i=0;function n(){/*apply f[++i]*/};n();</code></li>
-            <li>Max output size: <strong>16,001 characters</strong>. If too large, reduce blocks or optimize.</li>
-        </ul>
-        <details>
-            <summary style="color:#ff6b6b;cursor:pointer;">Show advanced tips</summary>
-            <ul>
-                <li>Optimize for size: enables diffing and coordinate packing.</li>
-                <li>ZIP export includes world_code.txt, code_block.txt, frames.json.</li>
-                <li>Delay: Bloxd "ticks" (20 = 1s) or ms for code-block auto-play.</li>
-            </ul>
-        </details>
-    </div>
-</section>
-<script>
-let frames = [];
-let selectedFrame = 0;
-let playing = false;
-let playTimer = null;
-let lastGenerated = {type:'', output:'', compressed:false, uncompressed:''};
-const dropArea = document.getElementById('drop-area');
-const fileInput = document.getElementById('file-input');
-const jsonInput = document.getElementById('json-input');
-const addJsonBtn = document.getElementById('add-json-btn');
-const dropError = document.getElementById('drop-error');
-const framesList = document.getElementById('frames-list');
-const frameControls = document.getElementById('frame-controls');
-const prevFrameBtn = document.getElementById('prev-frame-btn');
-const nextFrameBtn = document.getElementById('next-frame-btn');
-const playFrameBtn = document.getElementById('play-frame-btn');
-const frameInfo = document.getElementById('frame-info');
-const framePreview = document.getElementById('frame-preview');
-const originX = document.getElementById('origin-x');
-const originY = document.getElementById('origin-y');
-const originZ = document.getElementById('origin-z');
-const alignOriginBtn = document.getElementById('align-origin-btn');
-const fitLargestBtn = document.getElementById('fit-largest-btn');
-const alignCentersBtn = document.getElementById('align-centers-btn');
-const frameDelay = document.getElementById('frame-delay');
-const loopCheckbox = document.getElementById('loop-checkbox');
-const optimizeCheckbox = document.getElementById('optimize-checkbox');
-const worldEstimate = document.getElementById('world-estimate');
-const codeblockEstimate = document.getElementById('codeblock-estimate');
-const generateWorldBtn = document.getElementById('generate-world-btn');
-const generateCodeblockBtn = document.getElementById('generate-codeblock-btn');
-const exportZipBtn = document.getElementById('export-zip-btn');
-const resultPanel = document.getElementById('result-panel');
-const resultOutput = document.getElementById('result-output');
-const copyResultBtn = document.getElementById('copy-result-btn');
-const downloadResultBtn = document.getElementById('download-result-btn');
-const resultCount = document.getElementById('result-count');
-const resultIndicator = document.getElementById('result-indicator');
-const compressedLabel = document.getElementById('compressed-label');
-const toggleUncompressedBtn = document.getElementById('toggle-uncompressed-btn');
-const uncompressedPreview = document.getElementById('uncompressed-preview');
-const resultError = document.getElementById('result-error');
-
-// Drop area hover effect
-dropArea.addEventListener('dragover',e=>{
-    e.preventDefault();
-    dropArea.style.background='#ff6b6b11';
-    dropArea.style.boxShadow='0 8px 32px rgba(255,107,107,0.18)';
-});
-dropArea.addEventListener('dragleave',e=>{
-    dropArea.style.background='#fff';
-    dropArea.style.boxShadow='0 4px 24px rgba(0,0,0,0.12)';
-});
-dropArea.addEventListener('drop',e=>{
-    e.preventDefault();
-    dropArea.style.background='#fff';
-    dropArea.style.boxShadow='0 4px 24px rgba(0,0,0,0.12)';
-    handleFiles(e.dataTransfer.files);
-});
-fileInput.addEventListener('change',()=>handleFiles(fileInput.files));
-addJsonBtn.addEventListener('click',()=>{
-    let txt=jsonInput.value.trim();
-    if(!txt)return;
-    try{
-        let obj=JSON.parse(txt);
-        let frame=parseSchematick(obj,'JSON-'+(frames.length+1));
-        if(frame){frames.push(frame);updateFramesUI();jsonInput.value='';dropError.style.display='none';}
-        else{dropError.textContent='Invalid schematick/bloxdschem JSON.';dropError.style.display='block';}
-    }catch(e){dropError.textContent='Invalid JSON.';dropError.style.display='block';}
-});
-function handleFiles(fileList){
-    dropError.style.display='none';
-    let promises=[];
-    for(let f of fileList){
-        let ext = f.name.split('.').pop().toLowerCase();
-        if(['schematick','bloxdschem','json'].includes(ext)){
-            promises.push(new Promise(res=>{
-                let reader=new FileReader();
-                reader.onload=()=>{try{
-                    let obj=JSON.parse(reader.result);
-                    let frame=parseSchematick(obj,f.name);
-                    if(frame)res(frame);
-                    else{dropError.textContent='Invalid schematick/bloxdschem in '+f.name;dropError.style.display='block';res(null);}
-                }catch(e){dropError.textContent='Invalid JSON in '+f.name;dropError.style.display='block';res(null);}};
-                reader.readAsText(f);
-            }));
-        }else{
-            dropError.textContent='Unsupported file type: '+f.name;dropError.style.display='block';
-        }
-    }
-    Promise.all(promises).then(arr=>{
-        arr.forEach(f=>{if(f)frames.push(f);});
-        updateFramesUI();
-    });
-}
-function parseSchematick(obj,name){
-    let blocks=null,origin={x:0,y:0,z:0};
-    if(obj.blocks&&Array.isArray(obj.blocks))blocks=obj.blocks;
-    else if(obj.schematic&&obj.schematic.blocks)blocks=obj.schematic.blocks;
-    else{
-        for(let k in obj){
-            if(Array.isArray(obj[k])&&obj[k][0]&&typeof obj[k][0]=='object'&&'x'in obj[k][0]&&'y'in obj[k][0]&&'z'in obj[k][0]&&('id'in obj[k][0]||'name'in obj[k][0])){
-                blocks=obj[k];break;
-            }
-        }
-    }
-    if(!blocks)return null;
-    if(obj.origin&&typeof obj.origin=='object')origin=obj.origin;
-    else if(obj.schematic&&obj.schematic.origin)origin=obj.schematic.origin;
-    let normBlocks=[];
-    for(let b of blocks){
-        let x=Number(b.x),y=Number(b.y),z=Number(b.z),id=b.id||b.name;
-        if(isNaN(x)||isNaN(y)||isNaN(z)||!id)continue;
-        normBlocks.push({x,y,z,id});
-    }
-    if(normBlocks.length==0)return null;
-    let bbox=getBoundingBox(normBlocks);
-    return {name,blocks:normBlocks,origin,bbox,previewData:null};
-}
-function getBoundingBox(blocks){
-    let min={x:Infinity,y:Infinity,z:Infinity},max={x:-Infinity,y:-Infinity,z:-Infinity};
-    for(let b of blocks){
-        if(b.x<min.x)min.x=b.x;if(b.y<min.y)min.y=b.y;if(b.z<min.z)min.z=b.z;
-        if(b.x>max.x)max.x=b.x;if(b.y>max.y)max.y=b.y;if(b.z>max.z)max.z=b.z;
-    }
-    return {min,max};
-}
-function normalizeFrames(framesArr,originOverride){
-    let min={x:Infinity,y:Infinity,z:Infinity};
-    for(let f of framesArr){
-        for(let b of f.blocks){
-            if(b.x<min.x)min.x=b.x;if(b.y<min.y)min.y=b.y;if(b.z<min.z)min.z=b.z;
-        }
-    }
-    let origin=originOverride?originOverride:min;
-    let out=[];
-    for(let f of framesArr){
-        let blocks=f.blocks.map(b=>({
-            x:b.x-origin.x+Number(originX.value),
-            y:b.y-origin.y+Number(originY.value),
-            z:b.z-origin.z+Number(originZ.value),
-            id:b.id
-        }));
-        let bbox=getBoundingBox(blocks);
-        out.push({name:f.name,blocks,origin:{x:origin.x,y:origin.y,z:origin.z},bbox,previewData:null});
-    }
-    return out;
-}
-function updateFramesUI(){
-    frames=normalizeFrames(frames);
-    framesList.innerHTML='';
-    frames.forEach((f,i)=>{
-        let div=document.createElement('div');
-        div.className='frame-card';
-        div.style='background:#fff;border-radius:8px;padding:1rem;margin-bottom:0.7rem;display:flex;align-items:center;gap:1.2rem;';
-        div.innerHTML=`
-            <div style="flex:1;">
-                <strong style="color:#ff6b6b;">${f.name}</strong>
-                <div style="color:#23243a;font-size:0.98em;">Blocks: ${f.blocks.length}, Box: [${f.bbox.min.x},${f.bbox.min.y},${f.bbox.min.z}]→[${f.bbox.max.x},${f.bbox.max.y},${f.bbox.max.z}]</div>
-            </div>
-            <button class="project-btn" data-move="up" data-idx="${i}" style="padding:2px 8px;background:#ff6b6b;color:#fff;">↑</button>
-            <button class="project-btn" data-move="down" data-idx="${i}" style="padding:2px 8px;background:#ff6b6b;color:#fff;">↓</button>
-            <button class="project-btn" data-remove="${i}" style="padding:2px 8px;background:#ff6b6b;color:#fff;">✕</button>
-            <button class="project-btn" data-select="${i}" style="padding:2px 8px;background:#ff6b6b;color:#fff;">Select</button>
-        `;
-        framesList.appendChild(div);
-    });
-    framesList.querySelectorAll('[data-move]').forEach(btn=>{
-        btn.onclick=()=>{
-            let idx=Number(btn.dataset.idx);
-            if(btn.dataset.move=='up'&&idx>0){[frames[idx-1],frames[idx]]=[frames[idx],frames[idx-1]];}
-            if(btn.dataset.move=='down'&&idx<frames.length-1){[frames[idx+1],frames[idx]]=[frames[idx],frames[idx+1]];}
-            updateFramesUI();
-        };
-    });
-    framesList.querySelectorAll('[data-remove]').forEach(btn=>{
-        btn.onclick=()=>{
-            let idx=Number(btn.dataset.remove);
-            frames.splice(idx,1);
-            if(selectedFrame>=frames.length)selectedFrame=frames.length-1;
-            updateFramesUI();
-        };
-    });
-    framesList.querySelectorAll('[data-select]').forEach(btn=>{
-        btn.onclick=()=>{
-            selectedFrame=Number(btn.dataset.select);
-            showFramePreview();
-        };
-    });
-    if(frames.length>0){
-        frameControls.style.display='';
-        showFramePreview();
-    }else{
-        frameControls.style.display='none';
-        framePreview.style.display='none';
-    }
-    updateEstimates();
-}
-function showFramePreview(){
-    if(frames.length==0)return;
-    let f=frames[selectedFrame];
-    frameInfo.textContent=`Frame ${selectedFrame+1}/${frames.length} (${f.blocks.length} blocks)`;
-    framePreview.style.display='';
-    drawFramePreview(f.blocks,framePreview);
-}
-function drawFramePreview(blocks,canvas){
-    let ctx=canvas.getContext('2d');
-    ctx.clearRect(0,0,canvas.width,canvas.height);
-    let minX=Infinity,maxX=-Infinity,minZ=Infinity,maxZ=-Infinity;
-    for(let b of blocks){
-        if(b.x<minX)minX=b.x;if(b.x>maxX)maxX=b.x;
-        if(b.z<minZ)minZ=b.z;if(b.z>maxZ)maxZ=b.z;
-    }
-    let dx=maxX-minX+1, dz=maxZ-minZ+1;
-    let scale=Math.min(canvas.width/(dx+2),canvas.height/(dz+2));
-    for(let b of blocks){
-        let x=(b.x-minX+1)*scale, z=(b.z-minZ+1)*scale;
-        ctx.fillStyle='#ff6b6b';
-        ctx.fillRect(x,z,scale*0.7,scale*0.7);
-    }
-    ctx.strokeStyle='#23243a';
-    ctx.strokeRect(scale,scale,dx*scale,dz*scale);
-}
-prevFrameBtn.onclick=()=>{if(selectedFrame>0){selectedFrame--;showFramePreview();}};
-nextFrameBtn.onclick=()=>{if(selectedFrame<frames.length-1){selectedFrame++;showFramePreview();}};
-playFrameBtn.onclick=()=>{
-    if(playing){playing=false;playFrameBtn.textContent='Play';clearTimeout(playTimer);}
-    else{playing=true;playFrameBtn.textContent='Pause';playFrames();}
-};
-function playFrames(){
-    if(!playing)return;
-    selectedFrame=(selectedFrame+1)%frames.length;
-    showFramePreview();
-    playTimer=setTimeout(playFrames,Number(frameDelay.value)*50);
-}
-alignOriginBtn.onclick=()=>{
-    let min={x:Infinity,y:Infinity,z:Infinity};
-    for(let f of frames){
-        for(let b of f.blocks){
-            if(b.x<min.x)min.x=b.x;if(b.y<min.y)min.y=b.y;if(b.z<min.z)min.z=b.z;
-        }
-    }
-    originX.value=0;originY.value=0;originZ.value=0;
-    updateFramesUI();
-};
-fitLargestBtn.onclick=()=>{
-    let min={x:Infinity,y:Infinity,z:Infinity},max={x:-Infinity,y:-Infinity,z:-Infinity};
-    for(let f of frames){
-        for(let b of f.blocks){
-            if(b.x<min.x)min.x=b.x;if(b.y<min.y)min.y=b.y;if(b.z<min.z)min.z=b.z;
-            if(b.x>max.x)max.x=b.x;if(b.y>max.y)max.y=b.y;if(b.z>max.z)max.z=b.z;
-        }
-    }
-    originX.value=0;originY.value=0;originZ.value=0;
-    updateFramesUI();
-};
-alignCentersBtn.onclick=()=>{
-    let min={x:Infinity,y:Infinity,z:Infinity},max={x:-Infinity,y:-Infinity,z:-Infinity};
-    for(let f of frames){
-        for(let b of f.blocks){
-            if(b.x<min.x)min.x=b.x;if(b.y<min.y)min.y=b.y;if(b.z<min.z)min.z=b.z;
-            if(b.x>max.x)max.x=b.x;if(b.y>max.y)max.y=b.y;if(b.z>max.z)max.z=b.z;
-        }
-    }
-    let cx=Math.floor((min.x+max.x)/2),cy=Math.floor((min.y+max.y)/2),cz=Math.floor((min.z+max.z)/2);
-    originX.value=-cx;originY.value=-cy;originZ.value=-cz;
-    updateFramesUI();
-};
-function updateEstimates(){
-    let norm=normalizeFrames(frames);
-    let worldLen=estimateLength(norm,'world');
-    let codeblockLen=estimateLength(norm,'codeblock');
-    worldEstimate.textContent=worldLen;
-    codeblockEstimate.textContent=codeblockLen;
-    worldEstimate.style.color=worldLen<=16001?'#ff6b6b':'#23243a';
-    codeblockEstimate.style.color=codeblockLen<=16001?'#ff6b6b':'#23243a';
-}
-function estimateLength(framesArr,type){
-    let total=0;
-    if(framesArr.length==0)return 0;
-    let delay=String(frameDelay.value).length+3;
-    let prev={};
-    for(let i=0;i<framesArr.length;i++){
-        let f=framesArr[i];
-        let diff=computeDiffs(f.blocks,prev);
-        for(let op of diff){
-            if(op.t=='P')total+=('P,'+op.x+','+op.y+','+op.z+','+op.id+';').length;
-            else if(op.t=='R')total+=('R,'+op.x+','+op.y+','+op.z+';').length;
-        }
-        total+=('W,'+frameDelay.value+';').length;
-        prev={};for(let b of f.blocks)prev[b.x+','+b.y+','+b.z]=b.id;
-    }
-    if(loopCheckbox.checked)total+=10;
-    if(type=='codeblock')total+=200+framesArr.length*10;
-    return total;
-}
-function computeDiffs(blocks,prevBlocks){
-    let ops=[];
-    let curr={};
-    for(let b of blocks)curr[b.x+','+b.y+','+b.z]=b.id;
-    for(let k in curr){
-        if(!prevBlocks[k]||prevBlocks[k]!=curr[k]){
-            let [x,y,z]=k.split(',').map(Number);
-            ops.push({t:'P',x,y,z,id:curr[k]});
-        }
-    }
-    for(let k in prevBlocks){
-        if(!curr[k]){
-            let [x,y,z]=k.split(',').map(Number);
-            ops.push({t:'R',x,y,z});
-        }
-    }
-    return ops;
-}
-generateWorldBtn.onclick=()=>generateOutput('world');
-generateCodeblockBtn.onclick=()=>generateOutput('codeblock');
-function generateOutput(type){
-    if(frames.length==0){showResultError('Please upload at least one schematick or bloxdschem.');return;}
-    let norm=normalizeFrames(frames);
-    let optimize=optimizeCheckbox.checked;
-    let out='',uncompressed='',compressed=false;
-    if(type=='world'){
-        let res=generateWorldString(norm,optimize);
-        out=res.output;uncompressed=res.uncompressed;compressed=res.compressed;
-        if(out.length>16001){
-            showResultError('Sorry, the build is too big for World code');
-            return;
-        }
-    }else{
-        let res=generateCodeBlockString(norm,optimize);
-        out=res.output;uncompressed=res.uncompressed;compressed=res.compressed;
-        if(out.length>16001){
-            showResultError('Sorry, not enough space for Code-block code');
-            return;
-        }
-    }
-    showResult(out,type,compressed,uncompressed);
-}
-function showResultError(msg){
-    resultPanel.style.display='';
-    resultOutput.value='';
-    resultCount.textContent='';
-    resultIndicator.textContent='';
-    compressedLabel.style.display='none';
-    uncompressedPreview.style.display='none';
-    resultError.textContent=msg;
-    resultError.style.display='block';
-}
-function showResult(out,type,compressed,uncompressed){
-    resultPanel.style.display='';
-    resultOutput.value=out;
-    resultCount.textContent='Characters: '+out.length+' / 16,001';
-    resultIndicator.textContent=out.length<=16001?'✅':'❌';
-    resultIndicator.style.color=out.length<=16001?'#ff6b6b':'#23243a';
-    resultError.style.display='none';
-    compressedLabel.style.display=compressed?'':'none';
-    uncompressedPreview.style.display='none';
-    lastGenerated={type,output:out,compressed,uncompressed};
-}
-copyResultBtn.onclick=()=>{resultOutput.select();document.execCommand('copy');};
-downloadResultBtn.onclick=()=>{
-    let blob=new Blob([resultOutput.value],{type:'text/plain'});
-    let a=document.createElement('a');
-    a.href=URL.createObjectURL(blob);
-    a.download=lastGenerated.type=='world'?'world_code.txt':'code_block.txt';
-    a.click();
-};
-toggleUncompressedBtn.onclick=()=>{
-    if(uncompressedPreview.style.display=='none'){
-        uncompressedPreview.style.display='';
-        uncompressedPreview.querySelector('textarea').value=lastGenerated.uncompressed;
-        toggleUncompressedBtn.textContent='Hide original';
-    }else{
-        uncompressedPreview.style.display='none';
-        toggleUncompressedBtn.textContent='Show original';
-    }
-};
-exportZipBtn.onclick=()=>{
-    if(frames.length==0)return;
-    let zipObj={};
-    let norm=normalizeFrames(frames);
-    let w=generateWorldString(norm,optimizeCheckbox.checked);
-    let c=generateCodeBlockString(norm,optimizeCheckbox.checked);
-    zipObj['world_code.txt']=w.output;
-    zipObj['code_block.txt']=c.output;
-    zipObj['frames.json']=JSON.stringify(norm,null,2);
-    createZip(zipObj);
-};
-function createZip(files){
-    let JSZip=function(){this.files={};this.file=function(n,c){this.files[n]=c;};this.generateAsync=function(){let parts=[];for(let n in this.files){parts.push(this.files[n]);}return Promise.resolve(new Blob(parts,{type:'application/zip'}));};};
-    let zip=new JSZip();
-    for(let n in files)zip.file(n,files[n]);
-    zip.generateAsync().then(blob=>{
-        let a=document.createElement('a');
-        a.href=URL.createObjectURL(blob);
-        a.download='schematick_animator.zip';
-        a.click();
-    });
-}
-function generateWorldString(framesArr,optimize){
-    let out='',uncompressed='',compressed=false;
-    let prev={};
-    for(let i=0;i<framesArr.length;i++){
-        let f=framesArr[i];
-        let diff=computeDiffs(f.blocks,prev);
-        for(let op of diff){
-            out+='P,'+op.x+','+op.y+','+op.z+','+op.id+';';
-            uncompressed+='P,'+op.x+','+op.y+','+op.z+','+op.id+';\n';
-        }
-        out+='W,'+frameDelay.value+';';
-        uncompressed+='W,'+frameDelay.value+';\n';
-        prev={};for(let b of f.blocks)prev[b.x+','+b.y+','+b.z]=b.id;
-    }
-    if(loopCheckbox.checked)out+='L;';
-    if(optimize&&out.length>16001){
-        let cmp=compressStringIfNeeded(out);
-        if(cmp.output.length<=16001){
-            out=cmp.decompressor+cmp.output;
-            compressed=true;
-        }
-    }
-    return {output:out,uncompressed,compressed};
-}
-function generateCodeBlockString(framesArr,optimize){
-    let fArr=[];
-    let prev={};
-    for(let i=0;i<framesArr.length;i++){
-        let f=framesArr[i];
-        let diff=computeDiffs(f.blocks,prev);
-        let ops=[];
-        for(let op of diff){
-            if(op.t=='P')ops.push(['P',op.x,op.y,op.z,op.id]);
-            else if(op.t=='R')ops.push(['R',op.x,op.y,op.z]);
-        }
-        fArr.push(ops);
-        prev={};for(let b of f.blocks)prev[b.x+','+b.y+','+b.z]=b.id;
-    }
-    let code='var f='+JSON.stringify(fArr)+';var i=0;function n(){for(var j=0;j<f[i].length;j++){var o=f[i][j];if(o[0]=="P")setBlock(o[1],o[2],o[3],o[4]);else setBlock(o[1],o[2],o[3],"air");}wait('+frameDelay.value+');i='+(loopCheckbox.checked?'(i+1)%f.length':'Math.min(i+1,f.length-1)')+';}';
-    let uncompressed=code;
-    let compressed=false;
-    if(optimize&&code.length>16001){
-        let cmp=compressStringIfNeeded(code);
-        if(cmp.output.length<=16001){
-            code=cmp.decompressor+cmp.output;
-            compressed=true;
-        }
-    }
-    return {output:code,uncompressed,compressed};
-}
-function compressStringIfNeeded(str){
-    let out='',decompressor='';
-    let arr=str.split(';');
-    let gp=[];
-    for(let i=0;i<arr.length;i++){
-        let s=arr[i];
-        if(s.startsWith('P,')){
-            let parts=s.split(',');
-            let id=parts[4];
-            let key=id;
-            if(gp.length==0||gp[0]!=key)gp=[key,[]];
-            gp[1].push(parts.slice(1,4).join(','));
-            let next=arr[i+1]&&arr[i+1].startsWith('P,')?arr[i+1].split(',')[4]:null;
-            if(next!=key){
-                if(gp[1].length>2){
-                    out+='GP,'+gp[0]+','+gp[1].length+','+gp[1].join(',')+';';
-                }else{
-                    for(let c of gp[1])out+='P,'+c+','+gp[0]+';';
-                }
-                gp=[];
-            }
-        }else{
-            out+=s+';';
-        }
-    }
-    decompressor='(function(s){s=s.split(";");for(var i=0;i<s.length;i++){if(s[i].startsWith("GP,")){var p=s[i].split(",");var id=p[1],n=+p[2];for(var j=0;j<n;j++){setBlock(+p[3+j*3],+p[4+j*3],+p[5+j*3],id);}}else if(s[i].startsWith("P,")){var p=s[i].split(",");setBlock(+p[1],+p[2],+p[3],p[4]);}else if(s[i].startsWith("R,")){var p=s[i].split(",");setBlock(+p[1],+p[2],+p[3],"air");}else if(s[i].startsWith("W,")){wait(+s[i].split(",")[1]);}}})("';
-    return {output:out+'")',decompressor,decompressed:true};
-}
-</script>
-
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Welcome to Fridgee’s Site</title>
+    <meta charset="UTF-8" />
+    <title>Fridgee's animator</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <!-- React and ReactDOM CDN -->
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
     <style>
-        :root {
-            --bg-gradient-1: #23243a;
-            --bg-gradient-2: #1a1b2f;
-            --accent: #00ffd0;
-            --accent-hover: #00cfa0;
-            --title: purple;
-            --text-main: #000000;
-            --card-bg: #2d2e4a;
-            --shadow: 0 4px 24px rgba(0,0,0,0.2);
-            --transition: 0.3s cubic-bezier(.25,.8,.25,1);
-            --section-title: #fff;
-            --section-content: #fff;
-            --contact-info: #fff;
-        }
-        html {
-            scroll-behavior: smooth;
-        }
-        body {
-            margin: 0;
-            font-family: 'Segoe UI', 'Roboto', Arial, sans-serif;
-            color: var(--text-main);
-            background: linear-gradient(120deg, var(--bg-gradient-1), var(--bg-gradient-2));
-            min-height: 100vh;
-            transition: background 2s linear;
-            overflow-x: hidden;
-        }
-        @keyframes gradientMove {
-            0% {background-position: 0% 50%;}
-            50% {background-position: 100% 50%;}
-            100% {background-position: 0% 50%;}
-        }
-        body {
-            background: linear-gradient(120deg, #23243a, #1a1b2f, #00ffd0 10%);
-            background-size: 200% 200%;
-            animation: gradientMove 12s ease-in-out infinite;
-        }
-        header {
+        /* --- General & Layout --- */
+        .bloxd-container { font-family: sans-serif; background-color: #f0f0f0; color: #333; margin: 0; padding: 20px; }
+        .bloxd-inner-container { max-width: 1000px; margin: auto; background-color: #fff; padding: 20px; border-radius: 5px; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
+        .bloxd-container h1, .bloxd-container h2 { border-bottom: 2px solid #eee; padding-bottom: 10px; }
+
+        /* --- Drop Zone --- */
+        #drop-zone { border: 3px dashed #ccc; padding: 40px; text-align: center; color: #888; margin-bottom: 20px; transition: background-color 0.2s; }
+        #drop-zone.drag-over { background-color: #e0eafc; border-color: #3b82f6; }
+        #error-message { color: #dc2626; font-weight: bold; margin-top: 10px; min-height: 1.2em; }
+
+        /* --- Frames --- */
+        #frames-container { min-height: 100px; padding: 10px; background-color: #f9f9f9; border: 1px solid #ddd; }
+        .frame-card { background-color: #fff; border: 1px solid #ccc; padding: 15px; margin-bottom: 10px; display: flex; align-items: center; justify-content: space-between; cursor: grab; user-select: none; }
+        .frame-card:active { cursor: grabbing; }
+        .frame-card.dragging { opacity: 0.5; }
+        .frame-card .file-name { font-family: monospace; font-size: 0.9em; color: #555; margin: 0 15px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex-grow: 1; }
+        .frame-card .frame-label { font-weight: bold; }
+        .frame-card button { margin-left: 5px; }
+
+        /* --- Playback & Controls --- */
+        .controls, .export-section { margin-top: 20px; }
+        .controls label { margin-left: 15px; user-select: none; }
+        .frame-card.playing { border-left: 5px solid #3b82f6; box-shadow: 0 0 8px rgba(59, 130, 246, 0.5); }
+        #export-output { width: 100%; min-height: 200px; margin-top: 10px; font-family: monospace; font-size: 0.85em; padding: 10px; box-sizing: border-box; background-color: #1e1e1e; color: #d4d4d4; border: 1px solid #333; }
+
+        /* --- Footer --- */
+        .footer-info {
+            margin-top: 40px;
+            padding: 16px 0 0 0;
+            border-top: 2px solid #eee;
+            color: #444;
+            font-size: 1em;
             text-align: center;
-            padding: 2.5rem 1rem 1rem 1rem;
+            background: none;
         }
-        header h1 {
-            font-size: 2.5rem;
-            font-weight: 700;
-            letter-spacing: 1px;
-            margin: 0;
-            color: var(--title);
-            text-shadow: 0 2px 16px rgba(128,0,128,0.08);
+        .footer-info .footer-label {
+            font-weight: bold;
+            margin-right: 8px;
         }
-        nav {
-            position: sticky;
-            top: 0;
-            z-index: 100;
-            background: rgba(34,36,58,0.98);
-            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            padding: 0.5rem 0;
-            transition: background 0.3s;
+        .footer-info .footer-email {
+            color: #2563eb;
+            text-decoration: underline;
+            margin-right: 16px;
         }
-        nav ul {
-            list-style: none;
-            display: flex;
-            gap: 2rem;
-            margin: 0;
-            padding: 0;
-        }
-        nav a {
-            color: var(--text-main);
-            text-decoration: none;
-            font-size: 1.1rem;
-            font-weight: 500;
-            padding: 0.5rem 1rem;
-            border-radius: 6px;
-            transition: background var(--transition), color var(--transition);
-        }
-        nav a:hover, nav a.active {
-            background: var(--accent);
-            color: #23243a;
-        }
-        main {
-            max-width: 900px;
-            margin: 0 auto;
-            padding: 2rem 1rem 0 1rem;
-        }
-        section {
-            margin-bottom: 4rem;
-            opacity: 0;
-            transform: translateY(40px);
-            transition: opacity 0.8s, transform 0.8s;
-        }
-        section.visible {
-            opacity: 1;
-            transform: translateY(0);
-        }
-        #home {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            min-height: 60vh;
-            text-align: center;
-        }
-        #home h2 {
-            font-size: 2.2rem;
-            font-weight: 700;
-            margin-bottom: 0.7rem;
-            color: var(--accent);
-        }
-        #home h2,
-        #home p {
-            color: var(--section-content);
-        }
-        #projects {
-            text-align: center;
-        }
-        #projects h3 {
-            font-size: 1.7rem;
-            margin-bottom: 2rem;
-            color: var(--section-title);
-        }
-        .projects-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-            gap: 2rem;
-            justify-items: center;
-        }
-        .project-card {
-            background: var(--card-bg);
-            border-radius: 16px;
-            box-shadow: var(--shadow);
-            padding: 2rem 1.2rem 1.5rem 1.2rem;
-            text-align: left;
-            transition: transform var(--transition), box-shadow var(--transition);
-            display: flex;
-            flex-direction: column;
-            align-items: flex-start;
-            min-height: 220px;
-            max-width: 320px;
-        }
-        .project-card:hover {
-            transform: scale(1.04) translateY(-4px);
-            box-shadow: 0 8px 32px rgba(0,255,208,0.12);
-        }
-        .project-title {
-            font-size: 1.2rem;
-            font-weight: 600;
-            margin-bottom: 0.7rem;
-            color: var(--accent);
-        }
-        .project-desc {
-            font-size: 1rem;
-            margin-bottom: 1.2rem;
-            color: var(--section-content);
-        }
-        .project-btn {
-            background: var(--accent);
-            color: #23243a;
-            border: none;
-            border-radius: 8px;
-            padding: 0.5rem 1.2rem;
-            font-size: 1rem;
-            font-weight: 500;
-            cursor: pointer;
-            box-shadow: 0 2px 8px rgba(0,255,208,0.08);
-            transition: background var(--transition), transform var(--transition), box-shadow var(--transition);
-        }
-        .project-btn:hover {
-            background: var(--accent-hover);
-            transform: scale(1.07);
-            box-shadow: 0 4px 16px rgba(0,255,208,0.18);
-        }
-        #about h3 {
-            font-size: 1.7rem;
-            margin-bottom: 1.2rem;
-            color: var(--section-title);
-            text-align: center;
-        }
-        #about p {
-            font-size: 1.08rem;
-            color: var(--section-content);
-            line-height: 1.7;
-            text-align: center;
-            max-width: 600px;
-            margin: 0 auto;
-        }
-        #contact h3 {
-            font-size: 1.7rem;
-            margin-bottom: 1.2rem;
-            color: var(--section-title);
-            text-align: center;
-        }
-        .contact-info {
-            display: flex;
-            flex-direction: column;
-            gap: 1.2rem;
-            max-width: 400px;
-            margin: 0 auto;
-            background: var(--card-bg);
-            padding: 2rem 1.5rem;
-            border-radius: 16px;
-            box-shadow: var(--shadow);
-            color: var(--contact-info);
-            font-size: 1.08rem;
-        }
-        .contact-info span {
-            font-weight: 600;
-            color: var(--accent);
-        }
-        footer {
-            text-align: center;
-            padding: 1.2rem 0 0.7rem 0;
-            font-size: 0.98rem;
-            color: var(--accent);
-            background: transparent;
-            letter-spacing: 0.5px;
-        }
-        @media (max-width: 600px) {
-            header h1 {
-                font-size: 1.5rem;
-            }
-            #home h2 {
-                font-size: 1.3rem;
-            }
-            .projects-grid {
-                grid-template-columns: 1fr;
-            }
-            .project-card {
-                max-width: 100%;
-            }
-            main {
-                padding: 1rem 0.5rem 0 0.5rem;
-            }
-            .contact-info {
-                padding: 1.2rem 0.7rem;
-            }
+        .footer-info .footer-nick {
+            color: #059669;
+            font-family: monospace;
         }
     </style>
 </head>
 <body>
-    <header>
-        <h1>Welcome to Fridgee’s Site</h1>
-    </header>
-    <nav>
-        <ul>
-            <li><a href="#home" class="active">Home</a></li>
-            <li><a href="#projects">Projects</a></li>
-            <li><a href="#about">About</a></li>
-            <li><a href="#contact">Contact</a></li>
-        </ul>
-    </nav>
-    <main>
-        <section id="home">
-            <h2>Hi, I’m Fridgee 👋</h2>
-            <p>Building cool things, one pixel at a time.</p>
-        </section>
-        <section id="projects">
-            <h3>Projects</h3>
-            <div class="projects-grid">
-                <div class="project-card">
-                    <div class="project-title">Schematic Animation</div>
-                    <div class="project-desc">A tool that helps make a world code or a code block code that will animate your creations!</div>
-                    <button class="project-btn">Learn More</button>
-                </div>
-                <div class="project-card">
-                    <div class="project-title">Frosty Portfolio</div>
-                    <div class="project-desc">A sleek portfolio template for creative professionals. Easy to customize and deploy.</div>
-                    <button class="project-btn">Learn More</button>
-                </div>
-                <div class="project-card">
-                    <div class="project-title">Nothing</div>
-                    <div class="project-desc">A minimalist chat app for connecting with friends. Fast, secure, and beautifully simple.</div>
-                    <button class="project-btn">Learn More</button>
-                </div>
-            </div>
-        </section>
-        <section id="about">
-            <h3>About Me</h3>
-            <p>
-                Hi! I’m Fridgee, a Lazy developer who loves crafting different scripts and help people. Whether it’s building userscripts, or experimenting with new tech, I’m always too lazy to learn and create. So do something awesome yourself and reach your goals!
-            </p>
-        </section>
-        <section id="contact">
-            <h3>Contact</h3>
-            <div class="contact-info">
-                <div><span>Gmail:</span> I-am-Fridgee@gmail.com</div>
-                <div><span>Bloxd.io Name:</span> I_am_Fridgee</div>
-            </div>
-        </section>
-    </main>
-    <footer>
-        © 2025 Fridgee. All rights reserved.
-    </footer>
-    <script>
-        // Smooth scroll and active nav link
-        document.querySelectorAll('nav a').forEach(link => {
-            link.addEventListener('click', function(e) {
-                const targetId = this.getAttribute('href').slice(1);
-                const target = document.getElementById(targetId);
-                if (target) {
-                    e.preventDefault();
-                    window.scrollTo({
-                        top: target.offsetTop - document.querySelector('nav').offsetHeight,
-                        behavior: 'smooth'
-                    });
-                    document.querySelectorAll('nav a').forEach(a => a.classList.remove('active'));
-                    this.classList.add('active');
-                }
-            });
-        });
+    <div id="root"></div>
+    <script type="text/javascript">
+        const { useState, useEffect, useRef } = React;
 
-        // Fade-in animation for sections
-        function revealSections() {
-            const sections = document.querySelectorAll('main section');
-            const trigger = window.innerHeight * 0.85;
-            sections.forEach(section => {
-                const rect = section.getBoundingClientRect();
-                if (rect.top < trigger) {
-                    section.classList.add('visible');
+        function BloxdAnimator() {
+            const [frames, setFrames] = useState([]);
+            const [errorMessage, setErrorMessage] = useState('');
+            const [isDragOver, setIsDragOver] = useState(false);
+            const [draggedItemId, setDraggedItemId] = useState(null);
+            const [playingFrameId, setPlayingFrameId] = useState(null);
+
+            const nextId = useRef(0);
+            const playbackIntervalRef = useRef(null);
+            const currentFrameIndexRef = useRef(0);
+
+            const handleFileDrop = (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                setIsDragOver(false);
+                setErrorMessage('');
+                const files = Array.from(e.dataTransfer.files);
+                let hasInvalidFile = false;
+                let filesToProcess = [];
+                files.forEach(file => {
+                    if (file.name.endsWith('.bloxdschem')) {
+                        filesToProcess.push(file);
+                    } else {
+                        hasInvalidFile = true;
+                    }
+                });
+                if (hasInvalidFile) {
+                    setErrorMessage('Error: Only .bloxdschem files are supported. Invalid files were ignored.');
                 }
-            });
+                filesToProcess.forEach(file => {
+                    const reader = new FileReader();
+                    reader.onload = (event) => {
+                        const newFrame = {
+                            id: nextId.current++,
+                            fileName: file.name,
+                            fileContent: event.target.result
+                        };
+                        setFrames(prevFrames => [...prevFrames, newFrame]);
+                    };
+                    reader.readAsText(file);
+                });
+            };
+
+            const deleteFrame = (idToDelete) => {
+                setFrames(prevFrames => prevFrames.filter(f => f.id !== idToDelete));
+            };
+
+            const copyFrame = (idToCopy, index) => {
+                const frameToCopy = frames.find(f => f.id === idToCopy);
+                if (frameToCopy) {
+                    const newFrame = { ...frameToCopy, id: nextId.current++ };
+                    const newFrames = [...frames];
+                    newFrames.splice(index + 1, 0, newFrame);
+                    setFrames(newFrames);
+                }
+            };
+
+            const handleFrameDragStart = (e, id) => {
+                setDraggedItemId(id);
+                e.dataTransfer.effectAllowed = 'move';
+                e.currentTarget.classList.add('dragging');
+            };
+
+            const handleFrameDragOver = (e) => {
+                e.preventDefault();
+            };
+
+            const handleFrameDrop = (e, dropTargetId) => {
+                e.preventDefault();
+                const draggedItemIndex = frames.findIndex(f => f.id === draggedItemId);
+                const dropTargetIndex = frames.findIndex(f => f.id === dropTargetId);
+                if (draggedItemIndex !== -1 && dropTargetIndex !== -1 && draggedItemIndex !== dropTargetIndex) {
+                    const newFrames = [...frames];
+                    const [removed] = newFrames.splice(draggedItemIndex, 1);
+                    newFrames.splice(dropTargetIndex, 0, removed);
+                    setFrames(newFrames);
+                }
+            };
+
+            const handleDragEnd = () => {
+                document.querySelector('.dragging')?.classList.remove('dragging');
+                setDraggedItemId(null);
+            };
+
+            const handlePlayback = () => {
+                if (playbackIntervalRef.current) {
+                    clearInterval(playbackIntervalRef.current);
+                    playbackIntervalRef.current = null;
+                    setPlayingFrameId(null);
+                    return;
+                }
+                if (frames.length === 0) return;
+                currentFrameIndexRef.current = 0;
+                playbackIntervalRef.current = setInterval(() => {
+                    const isLooping = document.getElementById('loop-toggle')?.checked;
+                    if (currentFrameIndexRef.current >= frames.length) {
+                        if (isLooping) {
+                            currentFrameIndexRef.current = 0;
+                        } else {
+                            clearInterval(playbackIntervalRef.current);
+                            playbackIntervalRef.current = null;
+                            setTimeout(() => setPlayingFrameId(null), 500);
+                            return;
+                        }
+                    }
+                    const currentFrameData = frames[currentFrameIndexRef.current];
+                    if (currentFrameData) {
+                        setPlayingFrameId(currentFrameData.id);
+                    }
+                    currentFrameIndexRef.current++;
+                }, 500);
+            };
+
+            useEffect(() => {
+                return () => {
+                    if (playbackIntervalRef.current) {
+                        clearInterval(playbackIntervalRef.current);
+                    }
+                };
+            }, []);
+
+            const generateExportCode = () => {
+                const outputEl = document.getElementById('export-output');
+                if (!outputEl) return;
+                if (frames.length === 0) {
+                    outputEl.value = "-- Add some frames first to export code.";
+                    return;
+                }
+                const framesData = frames.map(frame => {
+                    const escapedContent = frame.fileContent.replace(/\\/g, '\\\\').replace(/"/g, '\\"').replace(/\n/g, '\\n');
+                    return `"${escapedContent}"`;
+                }).join(',\n    ');
+                const code = `-- Generated by Bloxd.io Animation Manager
+-- This code animates schematics based on your frames.
+
+-- Configuration
+local ANIMATION_SPEED = 10 -- Ticks per frame (20 ticks = 1 second)
+local PLAY_ON_START = true -- Set to false if you want to trigger it manually
+
+-- Frame Data (Do not edit)
+local frames = {
+        ${framesData}
+}
+local totalFrames = ${frames.length}
+local currentFrame = 1
+local tickCounter = 0
+
+-- Function to load a schematic frame
+function loadFrame(frameNumber)
+        if frames[frameNumber] then
+                -- NOTE: Bloxd.io does not have a native 'loadSchematicFromString' function.
+                -- The user must manually save each frame as a schematic in-game
+                -- and then call setBlocksFromSchematic() with the correct name.
+                -- This code assumes schematics are named "frame1", "frame2", etc.
+                setBlocksFromSchematic("frame"..frameNumber, getPos())
+                print("Loaded frame " .. frameNumber)
+        end
+end
+
+-- onTick is called every game tick (20 times per second)
+onTick(function()
+        if not PLAY_ON_START then return end
+        
+        tickCounter = tickCounter + 1
+        if tickCounter >= ANIMATION_SPEED then
+                tickCounter = 0 -- Reset counter
+                
+                currentFrame = currentFrame + 1
+                if currentFrame > totalFrames then
+                        currentFrame = 1 -- Loop animation
+                end
+                
+                loadFrame(currentFrame)
+        end
+end)
+
+-- onStart is called when the code block is loaded
+onStart(function()
+        print("Animation script started. Total frames: " .. totalFrames)
+        if PLAY_ON_START then
+                loadFrame(currentFrame)
+        end
+end)
+
+-- You will need to save each of your .bloxdschem files in-game
+-- with the names "frame1", "frame2", "frame3", etc. for this to work.
+`;
+                outputEl.value = code;
+            };
+
+            return (
+                React.createElement(React.Fragment, null,
+                    React.createElement("div", { className: "bloxd-container" },
+                        React.createElement("div", { className: "bloxd-inner-container" },
+                            React.createElement("h1", null, "Bloxd.io Animation Manager"),
+                            React.createElement("h2", null, "Step 1: Add Frames"),
+                            React.createElement("div", {
+                                id: "drop-zone",
+                                className: isDragOver ? 'drag-over' : '',
+                                onDragEnter: (e) => { e.preventDefault(); e.stopPropagation(); setIsDragOver(true); },
+                                onDragLeave: (e) => { e.preventDefault(); e.stopPropagation(); setIsDragOver(false); },
+                                onDragOver: (e) => { e.preventDefault(); e.stopPropagation(); },
+                                onDrop: handleFileDrop
+                            }, "Drag & Drop .bloxdschem files here"),
+                            React.createElement("div", { id: "error-message" }, errorMessage),
+                            React.createElement("h2", null, "Step 2: Manage Frames"),
+                            React.createElement("div", { id: "frames-container" },
+                                frames.map((frame, index) =>
+                                    React.createElement("div", {
+                                        key: frame.id,
+                                        className: `frame-card${playingFrameId === frame.id ? ' playing' : ''}`,
+                                        draggable: true,
+                                        onDragStart: (e) => handleFrameDragStart(e, frame.id),
+                                        onDragOver: handleFrameDragOver,
+                                        onDrop: (e) => handleFrameDrop(e, frame.id),
+                                        onDragEnd: handleDragEnd
+                                    },
+                                        React.createElement("div", null,
+                                            React.createElement("span", { className: "frame-label" }, `Frame ${index + 1}`)
+                                        ),
+                                        React.createElement("span", { className: "file-name" }, frame.fileName),
+                                        React.createElement("div", null,
+                                            React.createElement("button", { className: "copy-button", onClick: () => copyFrame(frame.id, index) }, "Copy"),
+                                            React.createElement("button", { className: "delete-button", onClick: () => deleteFrame(frame.id) }, "Delete")
+                                        )
+                                    )
+                                )
+                            ),
+                            React.createElement("h2", null, "Step 3: Playback & Export"),
+                            React.createElement("div", { className: "controls" },
+                                React.createElement("button", { id: "play-button", onClick: handlePlayback },
+                                    playbackIntervalRef.current ? 'Stop' : 'Play'
+                                ),
+                                React.createElement("label", null,
+                                    React.createElement("input", { type: "checkbox", id: "loop-toggle" }), " Loop"
+                                )
+                            ),
+                            React.createElement("div", { className: "export-section" },
+                                React.createElement("button", { id: "export-button", onClick: generateExportCode }, "Export Bloxd Code"),
+                                React.createElement("textarea", { id: "export-output", readOnly: true, placeholder: "Generated Bloxd.io code will appear here..." })
+                            )
+                        ),
+                        // Footer with your info
+                        React.createElement("div", { className: "footer-info" },
+                            React.createElement("span", { className: "footer-label" }, "G-mail:"),
+                            React.createElement("a", { className: "footer-email", href: "mailto:I-am-Fridgee@gmail.com" }, "I-am_Fridgee@gmail.com"),
+                            React.createElement("span", { className: "footer-label" }, "Bloxd Nickname:"),
+                            React.createElement("span", { className: "footer-nick" }, "I_am_Fridgee")
+                        )
+                    )
+                )
+            );
         }
-        window.addEventListener('scroll', revealSections);
-        window.addEventListener('load', revealSections);
 
-        // Optional: Fade-in on load for first section
-        document.addEventListener('DOMContentLoaded', () => {
-            setTimeout(revealSections, 100);
-        });
+        ReactDOM.createRoot(document.getElementById('root')).render(React.createElement(BloxdAnimator));
     </script>
 </body>
 </html>
