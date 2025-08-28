@@ -1,329 +1,78 @@
 
-<!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8" />
-    <title>Fridgee's animator</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <!-- React and ReactDOM CDN -->
-    <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
-    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <meta charset="UTF-8">
+    <title>Bloxdschem Block Viewer</title>
     <style>
-        /* --- General & Layout --- */
-        .bloxd-container { font-family: sans-serif; background-color: #f0f0f0; color: #333; margin: 0; padding: 20px; }
-        .bloxd-inner-container { max-width: 1000px; margin: auto; background-color: #fff; padding: 20px; border-radius: 5px; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
-        .bloxd-container h1, .bloxd-container h2 { border-bottom: 2px solid #eee; padding-bottom: 10px; }
-
-        /* --- Drop Zone --- */
-        #drop-zone { border: 3px dashed #ccc; padding: 40px; text-align: center; color: #888; margin-bottom: 20px; transition: background-color 0.2s; }
-        #drop-zone.drag-over { background-color: #e0eafc; border-color: #3b82f6; }
-        #error-message { color: #dc2626; font-weight: bold; margin-top: 10px; min-height: 1.2em; }
-
-        /* --- Frames --- */
-        #frames-container { min-height: 100px; padding: 10px; background-color: #f9f9f9; border: 1px solid #ddd; }
-        .frame-card { background-color: #fff; border: 1px solid #ccc; padding: 15px; margin-bottom: 10px; display: flex; align-items: center; justify-content: space-between; cursor: grab; user-select: none; }
-        .frame-card:active { cursor: grabbing; }
-        .frame-card.dragging { opacity: 0.5; }
-        .frame-card .file-name { font-family: monospace; font-size: 0.9em; color: #555; margin: 0 15px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex-grow: 1; }
-        .frame-card .frame-label { font-weight: bold; }
-        .frame-card button { margin-left: 5px; }
-
-        /* --- Playback & Controls --- */
-        .controls, .export-section { margin-top: 20px; }
-        .controls label { margin-left: 15px; user-select: none; }
-        .frame-card.playing { border-left: 5px solid #3b82f6; box-shadow: 0 0 8px rgba(59, 130, 246, 0.5); }
-        #export-output { width: 100%; min-height: 200px; margin-top: 10px; font-family: monospace; font-size: 0.85em; padding: 10px; box-sizing: border-box; background-color: #1e1e1e; color: #d4d4d4; border: 1px solid #333; }
-
-        /* --- Footer --- */
-        .footer-info {
-            margin-top: 40px;
-            padding: 16px 0 0 0;
-            border-top: 2px solid #eee;
-            color: #444;
-            font-size: 1em;
+        body { font-family: sans-serif; margin: 2em; }
+        #dropzone {
+            border: 2px dashed #888;
+            padding: 2em;
             text-align: center;
-            background: none;
+            color: #888;
+            margin-bottom: 1em;
         }
-        .footer-info .footer-label {
-            font-weight: bold;
-            margin-right: 8px;
-        }
-        .footer-info .footer-email {
-            color: #2563eb;
-            text-decoration: underline;
-            margin-right: 16px;
-        }
-        .footer-info .footer-nick {
-            color: #059669;
-            font-family: monospace;
-        }
+        table { border-collapse: collapse; width: 100%; margin-top: 1em; }
+        th, td { border: 1px solid #ccc; padding: 0.5em; text-align: left; }
+        #error { color: red; margin-top: 1em; }
     </style>
 </head>
 <body>
-    <div id="root"></div>
-    <script type="text/javascript">
-        const { useState, useEffect, useRef } = React;
+    <h1>Bloxdschem Block Viewer</h1>
+    <div id="dropzone">Drag and drop a <code>.bloxdschem</code> file here</div>
+    <div id="error"></div>
+    <div id="table"></div>
+    <script>
+        const dropzone = document.getElementById('dropzone');
+        const errorDiv = document.getElementById('error');
+        const tableDiv = document.getElementById('table');
 
-        function BloxdAnimator() {
-            const [frames, setFrames] = useState([]);
-            const [errorMessage, setErrorMessage] = useState('');
-            const [isDragOver, setIsDragOver] = useState(false);
-            const [draggedItemId, setDraggedItemId] = useState(null);
-            const [playingFrameId, setPlayingFrameId] = useState(null);
-
-            const nextId = useRef(0);
-            const playbackIntervalRef = useRef(null);
-            const currentFrameIndexRef = useRef(0);
-
-            const handleFileDrop = (e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                setIsDragOver(false);
-                setErrorMessage('');
-                const files = Array.from(e.dataTransfer.files);
-                let hasInvalidFile = false;
-                let filesToProcess = [];
-                files.forEach(file => {
-                    if (file.name.endsWith('.bloxdschem')) {
-                        filesToProcess.push(file);
-                    } else {
-                        hasInvalidFile = true;
-                    }
-                });
-                if (hasInvalidFile) {
-                    setErrorMessage('Error: Only .bloxdschem files are supported. Invalid files were ignored.');
-                }
-                filesToProcess.forEach(file => {
-                    const reader = new FileReader();
-                    reader.onload = (event) => {
-                        const newFrame = {
-                            id: nextId.current++,
-                            fileName: file.name,
-                            fileContent: event.target.result
-                        };
-                        setFrames(prevFrames => [...prevFrames, newFrame]);
-                    };
-                    reader.readAsText(file);
-                });
-            };
-
-            const deleteFrame = (idToDelete) => {
-                setFrames(prevFrames => prevFrames.filter(f => f.id !== idToDelete));
-            };
-
-            const copyFrame = (idToCopy, index) => {
-                const frameToCopy = frames.find(f => f.id === idToCopy);
-                if (frameToCopy) {
-                    const newFrame = { ...frameToCopy, id: nextId.current++ };
-                    const newFrames = [...frames];
-                    newFrames.splice(index + 1, 0, newFrame);
-                    setFrames(newFrames);
-                }
-            };
-
-            const handleFrameDragStart = (e, id) => {
-                setDraggedItemId(id);
-                e.dataTransfer.effectAllowed = 'move';
-                e.currentTarget.classList.add('dragging');
-            };
-
-            const handleFrameDragOver = (e) => {
-                e.preventDefault();
-            };
-
-            const handleFrameDrop = (e, dropTargetId) => {
-                e.preventDefault();
-                const draggedItemIndex = frames.findIndex(f => f.id === draggedItemId);
-                const dropTargetIndex = frames.findIndex(f => f.id === dropTargetId);
-                if (draggedItemIndex !== -1 && dropTargetIndex !== -1 && draggedItemIndex !== dropTargetIndex) {
-                    const newFrames = [...frames];
-                    const [removed] = newFrames.splice(draggedItemIndex, 1);
-                    newFrames.splice(dropTargetIndex, 0, removed);
-                    setFrames(newFrames);
-                }
-            };
-
-            const handleDragEnd = () => {
-                document.querySelector('.dragging')?.classList.remove('dragging');
-                setDraggedItemId(null);
-            };
-
-            const handlePlayback = () => {
-                if (playbackIntervalRef.current) {
-                    clearInterval(playbackIntervalRef.current);
-                    playbackIntervalRef.current = null;
-                    setPlayingFrameId(null);
-                    return;
-                }
-                if (frames.length === 0) return;
-                currentFrameIndexRef.current = 0;
-                playbackIntervalRef.current = setInterval(() => {
-                    const isLooping = document.getElementById('loop-toggle')?.checked;
-                    if (currentFrameIndexRef.current >= frames.length) {
-                        if (isLooping) {
-                            currentFrameIndexRef.current = 0;
-                        } else {
-                            clearInterval(playbackIntervalRef.current);
-                            playbackIntervalRef.current = null;
-                            setTimeout(() => setPlayingFrameId(null), 500);
-                            return;
-                        }
-                    }
-                    const currentFrameData = frames[currentFrameIndexRef.current];
-                    if (currentFrameData) {
-                        setPlayingFrameId(currentFrameData.id);
-                    }
-                    currentFrameIndexRef.current++;
-                }, 500);
-            };
-
-            useEffect(() => {
-                return () => {
-                    if (playbackIntervalRef.current) {
-                        clearInterval(playbackIntervalRef.current);
-                    }
-                };
-            }, []);
-
-const generateExportCode = () => {
-    const outputEl = document.getElementById('export-output');
-    if (!outputEl) return;
-    if (frames.length === 0) {
-        outputEl.value = "-- Add some frames first to export code.";
-        return;
-    }
-
-    // Helper: parse .bloxdschem (JSON or text)
-    function parseBlocks(schemContent) {
-        try {
-            // Try JSON first
-            const data = JSON.parse(schemContent);
-            if (Array.isArray(data.blocks)) {
-                return data.blocks.map(b => ({
-                    x: Number(b.x), y: Number(b.y), z: Number(b.z), type: b.type || b.block || b.name
-                }));
-            }
-        } catch (e) {
-            // Try Bloxd.io's text format: lines like "x y z type"
-            const lines = schemContent.split('\n');
-            const blocks = [];
-            for (const line of lines) {
-                const m = line.trim().match(/^(-?\d+)\s+(-?\d+)\s+(-?\d+)\s+(.+)$/);
-                if (m) {
-                    blocks.push({ x: +m[1], y: +m[2], z: +m[3], type: m[4] });
-                }
-            }
-            if (blocks.length) return blocks;
-        }
-        return [];
-    }
-
-    // Parse all frames and collect all unique block positions
-    const allBlocks = frames.map(f => parseBlocks(f.fileContent));
-    const posSet = new Set();
-    allBlocks.forEach(blocks => {
-        blocks.forEach(b => {
-            posSet.add(`${b.x},${b.y},${b.z}`);
+        dropzone.addEventListener('dragover', e => {
+            e.preventDefault();
+            dropzone.style.borderColor = '#333';
         });
-    });
-    const allPositions = Array.from(posSet).map(str => str.split(',').map(Number));
 
-    // Output code
-    let code = `let animFrame = 0
-let animTimer = 0
-const animStartPos = [0, 1, 0] // Change to your desired starting position
+        dropzone.addEventListener('dragleave', e => {
+            dropzone.style.borderColor = '#888';
+        });
 
-tick = (ms) => {
-    animTimer += ms
-    if (animTimer < 400) return // 400ms per frame (~2.5 fps)
-    animTimer = 0
-    animFrame++
-
-    // Clear all possible blocks used in animation
-`;
-    for (const [x, y, z] of allPositions) {
-        code += `    api.setBlock(animStartPos[0] + ${x}, animStartPos[1] + ${y}, animStartPos[2] + ${z}, "Air")\n`;
-    }
-    code += '\n';
-
-    for (let i = 0; i < allBlocks.length; ++i) {
-        const blocks = allBlocks[i];
-        code += `    if (animFrame === ${i + 1}) {\n`;
-        for (const b of blocks) {
-            code += `        api.setBlock(animStartPos[0] + ${b.x}, animStartPos[1] + ${b.y}, animStartPos[2] + ${b.z}, "${b.type}")\n`;
-        }
-        code += '    } else ';
-    }
-    code += `if (animFrame > ${allBlocks.length}) {\n        animFrame = 0\n    }\n}\n`;
-
-    outputEl.value = code;
-};
-
-            return (
-                React.createElement(React.Fragment, null,
-                    React.createElement("div", { className: "bloxd-container" },
-                        React.createElement("div", { className: "bloxd-inner-container" },
-                            React.createElement("h1", null, "Bloxd.io Animation Manager"),
-                            React.createElement("h2", null, "Step 1: Add Frames"),
-                            React.createElement("div", {
-                                id: "drop-zone",
-                                className: isDragOver ? 'drag-over' : '',
-                                onDragEnter: (e) => { e.preventDefault(); e.stopPropagation(); setIsDragOver(true); },
-                                onDragLeave: (e) => { e.preventDefault(); e.stopPropagation(); setIsDragOver(false); },
-                                onDragOver: (e) => { e.preventDefault(); e.stopPropagation(); },
-                                onDrop: handleFileDrop
-                            }, "Drag & Drop .bloxdschem files here"),
-                            React.createElement("div", { id: "error-message" }, errorMessage),
-                            React.createElement("h2", null, "Step 2: Manage Frames"),
-                            React.createElement("div", { id: "frames-container" },
-                                frames.map((frame, index) =>
-                                    React.createElement("div", {
-                                        key: frame.id,
-                                        className: `frame-card${playingFrameId === frame.id ? ' playing' : ''}`,
-                                        draggable: true,
-                                        onDragStart: (e) => handleFrameDragStart(e, frame.id),
-                                        onDragOver: handleFrameDragOver,
-                                        onDrop: (e) => handleFrameDrop(e, frame.id),
-                                        onDragEnd: handleDragEnd
-                                    },
-                                        React.createElement("div", null,
-                                            React.createElement("span", { className: "frame-label" }, `Frame ${index + 1}`)
-                                        ),
-                                        React.createElement("span", { className: "file-name" }, frame.fileName),
-                                        React.createElement("div", null,
-                                            React.createElement("button", { className: "copy-button", onClick: () => copyFrame(frame.id, index) }, "Copy"),
-                                            React.createElement("button", { className: "delete-button", onClick: () => deleteFrame(frame.id) }, "Delete")
-                                        )
-                                    )
-                                )
-                            ),
-                            React.createElement("h2", null, "Step 3: Playback & Export"),
-                            React.createElement("div", { className: "controls" },
-                                React.createElement("button", { id: "play-button", onClick: handlePlayback },
-                                    playbackIntervalRef.current ? 'Stop' : 'Play'
-                                ),
-                                React.createElement("label", null,
-                                    React.createElement("input", { type: "checkbox", id: "loop-toggle" }), " Loop"
-                                )
-                            ),
-                            React.createElement("div", { className: "export-section" },
-                                React.createElement("button", { id: "export-button", onClick: generateExportCode }, "Export Bloxd Code"),
-                                React.createElement("textarea", { id: "export-output", readOnly: true, placeholder: "Generated Bloxd.io code will appear here..." })
-                            )
-                        ),
-                        // Footer with your info
-                        React.createElement("div", { className: "footer-info" },
-                            React.createElement("span", { className: "footer-label" }, "G-mail:"),
-                            React.createElement("a", { className: "footer-email", href: "mailto:I-am-Fridgee@gmail.com" }, "I-am_Fridgee@gmail.com"),
-                            React.createElement("span", { className: "footer-label" }, "Bloxd Nickname:"),
-                            React.createElement("span", { className: "footer-nick" }, "I_am_Fridgee")
-                        )
-                    )
-                )
-            );
-        }
-
-        ReactDOM.createRoot(document.getElementById('root')).render(React.createElement(BloxdAnimator));
+        dropzone.addEventListener('drop', e => {
+            e.preventDefault();
+            dropzone.style.borderColor = '#888';
+            errorDiv.textContent = '';
+            tableDiv.innerHTML = '';
+            const file = e.dataTransfer.files[0];
+            if (!file || !file.name.endsWith('.bloxdschem')) {
+                errorDiv.textContent = 'Please drop a valid .bloxdschem file.';
+                return;
+            }
+            const reader = new FileReader();
+            reader.onload = function(evt) {
+                try {
+                    const data = JSON.parse(evt.target.result);
+                    if (!Array.isArray(data.blocks)) throw 0;
+                    const blocks = data.blocks;
+                    let html = '<table><tr><th>Name</th><th>X</th><th>Y</th><th>Z</th></tr>';
+                    for (const block of blocks) {
+                        if (
+                            typeof block.name !== 'string' ||
+                            typeof block.x !== 'number' ||
+                            typeof block.y !== 'number' ||
+                            typeof block.z !== 'number'
+                        ) throw 0;
+                        html += `<tr><td>${block.name}</td><td>${block.x}</td><td>${block.y}</td><td>${block.z}</td></tr>`;
+                    }
+                    html += '</table>';
+                    tableDiv.innerHTML = html;
+                } catch {
+                    errorDiv.textContent = 'Invalid .bloxdschem file format.';
+                }
+            };
+            reader.onerror = function() {
+                errorDiv.textContent = 'Failed to read file.';
+            };
+            reader.readAsText(file);
+        });
     </script>
 </body>
 </html>
