@@ -1,68 +1,66 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Open Any File</title>
+  <meta charset="utf-8">
+  <title>Bloxdschem Viewer</title>
+  <style>
+    body { font-family: monospace; background: #111; color: #0f0; padding: 20px; }
+    #dropzone { border: 2px dashed #0f0; padding: 40px; text-align: center; cursor: pointer; }
+    pre { white-space: pre-wrap; word-wrap: break-word; }
+  </style>
 </head>
 <body>
-  <h2>Open Any File</h2>
-  
-  <!-- File input -->
-  <input type="file" id="fileInput">
-  
-  <!-- Drag and drop zone -->
-  <div id="dropZone" style="margin-top:20px; width:300px; height:100px; border:2px dashed #444; text-align:center; line-height:100px;">
-    Drag & Drop File Here
-  </div>
-
+  <h1>Bloxdschem Viewer</h1>
+  <div id="dropzone">Drop your .bloxdschem file here</div>
   <pre id="output"></pre>
 
+  <!-- NBT Parser -->
+  <script src="https://unpkg.com/prismarine-nbt@2.2.1/dist/nbt-browser.min.js"></script>
   <script>
-    const fileInput = document.getElementById('fileInput');
-    const dropZone = document.getElementById('dropZone');
-    const output = document.getElementById('output');
+    const dropzone = document.getElementById("dropzone");
+    const output = document.getElementById("output");
 
-    // Function to read file
+    // Drag & Drop
+    dropzone.addEventListener("dragover", e => {
+      e.preventDefault();
+      dropzone.style.background = "#222";
+    });
+    dropzone.addEventListener("dragleave", e => {
+      e.preventDefault();
+      dropzone.style.background = "none";
+    });
+    dropzone.addEventListener("drop", e => {
+      e.preventDefault();
+      dropzone.style.background = "none";
+      const file = e.dataTransfer.files[0];
+      if (file) {
+        readFile(file);
+      }
+    });
+
+    // File reader + NBT parser
     function readFile(file) {
       const reader = new FileReader();
+      reader.readAsArrayBuffer(file);
 
-      // if it's text, read as text. if not, read as binary
-      if (file.type.startsWith("text") || file.name.endsWith(".json")) {
-        reader.readAsText(file);
-      } else {
-        reader.readAsArrayBuffer(file);
-      }
+      reader.onload = async function(event) {
+        try {
+          const buffer = new Uint8Array(event.target.result);
 
-      reader.onload = function(event) {
-        output.textContent = event.target.result;
-      };
-
-      reader.onerror = function() {
-        output.textContent = "Error reading file.";
+          // Try to parse as NBT (auto handles gzip too)
+          nbt.parse(buffer, (err, data) => {
+            if (err) {
+              output.textContent = "Error parsing: " + err.message;
+            } else {
+              // Show full JSON result (blocks + coords are usually in "Palette" + "BlockData")
+              output.textContent = JSON.stringify(data, null, 2);
+            }
+          });
+        } catch (err) {
+          output.textContent = "Failed: " + err.message;
+        }
       };
     }
-
-    // File input
-    fileInput.addEventListener('change', (e) => {
-      const file = e.target.files[0];
-      if (file) readFile(file);
-    });
-
-    // Drag & drop
-    dropZone.addEventListener('dragover', (e) => {
-      e.preventDefault();
-      dropZone.style.background = "#eee";
-    });
-
-    dropZone.addEventListener('dragleave', () => {
-      dropZone.style.background = "";
-    });
-
-    dropZone.addEventListener('drop', (e) => {
-      e.preventDefault();
-      dropZone.style.background = "";
-      const file = e.dataTransfer.files[0];
-      if (file) readFile(file);
-    });
   </script>
 </body>
 </html>
