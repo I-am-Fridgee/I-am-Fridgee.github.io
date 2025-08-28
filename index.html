@@ -193,14 +193,14 @@ const generateExportCode = () => {
         return;
     }
 
-    // Helper: parse .bloxdschem (assume JSON with blocks: [{x,y,z,type}] or similar)
+    // Helper: parse .bloxdschem (JSON or text)
     function parseBlocks(schemContent) {
         try {
             // Try JSON first
             const data = JSON.parse(schemContent);
             if (Array.isArray(data.blocks)) {
                 return data.blocks.map(b => ({
-                    x: b.x, y: b.y, z: b.z, type: b.type || b.block || b.name
+                    x: Number(b.x), y: Number(b.y), z: Number(b.z), type: b.type || b.block || b.name
                 }));
             }
         } catch (e) {
@@ -218,9 +218,8 @@ const generateExportCode = () => {
         return [];
     }
 
-    // Parse all frames
+    // Parse all frames and collect all unique block positions
     const allBlocks = frames.map(f => parseBlocks(f.fileContent));
-    // Find all unique block positions used in any frame
     const posSet = new Set();
     allBlocks.forEach(blocks => {
         blocks.forEach(b => {
@@ -255,7 +254,7 @@ tick = (ms) => {
         }
         code += '    } else ';
     }
-    code += `if (animFrame > ${allBlocks.length + 1}) {\n        animFrame = 0\n    }\n}\n`;
+    code += `if (animFrame > ${allBlocks.length}) {\n        animFrame = 0\n    }\n}\n`;
 
     outputEl.value = code;
 };
