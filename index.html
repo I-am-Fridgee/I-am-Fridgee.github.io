@@ -14,13 +14,13 @@
   <div id="dropzone">Drop your .bloxdschem file here</div>
   <pre id="output"></pre>
 
-  <!-- NBT Parser -->
+  <!-- Correct NBT Parser -->
   <script src="https://unpkg.com/prismarine-nbt@2.2.1/dist/nbt-browser.min.js"></script>
   <script>
     const dropzone = document.getElementById("dropzone");
     const output = document.getElementById("output");
 
-    // Drag & Drop
+    // Drag & Drop handlers
     dropzone.addEventListener("dragover", e => {
       e.preventDefault();
       dropzone.style.background = "#222";
@@ -43,16 +43,15 @@
       const reader = new FileReader();
       reader.readAsArrayBuffer(file);
 
-      reader.onload = async function(event) {
+      reader.onload = function(event) {
         try {
           const buffer = new Uint8Array(event.target.result);
 
-          // Try to parse as NBT (auto handles gzip too)
-          nbt.parse(buffer, (err, data) => {
+          // Use the correct global object: prismarineNbt
+          prismarineNbt.parse(buffer, (err, data) => {
             if (err) {
               output.textContent = "Error parsing: " + err.message;
             } else {
-              // Show full JSON result (blocks + coords are usually in "Palette" + "BlockData")
               output.textContent = JSON.stringify(data, null, 2);
             }
           });
