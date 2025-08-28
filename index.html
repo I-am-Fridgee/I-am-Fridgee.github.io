@@ -1,85 +1,68 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-    <meta charset="UTF-8">
-    <title>Bloxdschem Block Viewer</title>
-    <style>
-        body { font-family: sans-serif; margin: 2em; }
-        #dropzone {
-            border: 2px dashed #888;
-            padding: 2em;
-            text-align: center;
-            color: #888;
-            margin-bottom: 1em;
-        }
-        table { border-collapse: collapse; width: 100%; margin-top: 1em; }
-        th, td { border: 1px solid #ccc; padding: 0.5em; text-align: left; }
-        #error { color: red; margin-top: 1em; }
-    </style>
+  <title>Open Any File</title>
 </head>
 <body>
-    <h1>Bloxdschem Block Viewer</h1>
-    <div id="dropzone">Drag and drop a <code>.bloxdschem</code> file here</div>
-    <div id="error"></div>
-    <div id="table"></div>
-    <script>
-        const dropzone = document.getElementById('dropzone');
-        const errorDiv = document.getElementById('error');
-        const tableDiv = document.getElementById('table');
+  <h2>Open Any File</h2>
+  
+  <!-- File input -->
+  <input type="file" id="fileInput">
+  
+  <!-- Drag and drop zone -->
+  <div id="dropZone" style="margin-top:20px; width:300px; height:100px; border:2px dashed #444; text-align:center; line-height:100px;">
+    Drag & Drop File Here
+  </div>
 
-        dropzone.addEventListener('dragover', e => {
-            e.preventDefault();
-            dropzone.style.borderColor = '#333';
-        });
+  <pre id="output"></pre>
 
-        dropzone.addEventListener('dragleave', e => {
-            dropzone.style.borderColor = '#888';
-        });
+  <script>
+    const fileInput = document.getElementById('fileInput');
+    const dropZone = document.getElementById('dropZone');
+    const output = document.getElementById('output');
 
-        dropzone.addEventListener('drop', e => {
-            e.preventDefault();
-            dropzone.style.borderColor = '#888';
-            errorDiv.textContent = '';
-            tableDiv.innerHTML = '';
-            const file = e.dataTransfer.files[0];
-            if (!file || !file.name.endsWith('.bloxdschem')) {
-                errorDiv.textContent = 'Please drop a valid .bloxdschem file.';
-                return;
-            }
-            const reader = new FileReader();
-            reader.onload = function(evt) {
-                try {
-                    const data = JSON.parse(evt.target.result);
-                    // Support both {blocks: [...]} and {data: {blocks: [...]}}
-                    let blocks = null;
-                    if (Array.isArray(data.blocks)) {
-                        blocks = data.blocks;
-                    } else if (data.data && Array.isArray(data.data.blocks)) {
-                        blocks = data.data.blocks;
-                    } else {
-                        throw 0;
-                    }
-                    let html = '<table><tr><th>Name</th><th>X</th><th>Y</th><th>Z</th></tr>';
-                    for (const block of blocks) {
-                        if (
-                            typeof block.name !== 'string' ||
-                            typeof block.x !== 'number' ||
-                            typeof block.y !== 'number' ||
-                            typeof block.z !== 'number'
-                        ) throw 0;
-                        html += `<tr><td>${block.name}</td><td>${block.x}</td><td>${block.y}</td><td>${block.z}</td></tr>`;
-                    }
-                    html += '</table>';
-                    tableDiv.innerHTML = html;
-                } catch {
-                    errorDiv.textContent = 'Invalid .bloxdschem file format.';
-                }
-            };
-            reader.onerror = function() {
-                errorDiv.textContent = 'Failed to read file.';
-            };
-            reader.readAsText(file);
-        });
-    </script>
+    // Function to read file
+    function readFile(file) {
+      const reader = new FileReader();
+
+      // if it's text, read as text. if not, read as binary
+      if (file.type.startsWith("text") || file.name.endsWith(".json")) {
+        reader.readAsText(file);
+      } else {
+        reader.readAsArrayBuffer(file);
+      }
+
+      reader.onload = function(event) {
+        output.textContent = event.target.result;
+      };
+
+      reader.onerror = function() {
+        output.textContent = "Error reading file.";
+      };
+    }
+
+    // File input
+    fileInput.addEventListener('change', (e) => {
+      const file = e.target.files[0];
+      if (file) readFile(file);
+    });
+
+    // Drag & drop
+    dropZone.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      dropZone.style.background = "#eee";
+    });
+
+    dropZone.addEventListener('dragleave', () => {
+      dropZone.style.background = "";
+    });
+
+    dropZone.addEventListener('drop', (e) => {
+      e.preventDefault();
+      dropZone.style.background = "";
+      const file = e.dataTransfer.files[0];
+      if (file) readFile(file);
+    });
+  </script>
 </body>
 </html>
