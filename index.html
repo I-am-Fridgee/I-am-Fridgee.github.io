@@ -1,4 +1,4 @@
-
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -50,8 +50,15 @@
             reader.onload = function(evt) {
                 try {
                     const data = JSON.parse(evt.target.result);
-                    if (!Array.isArray(data.blocks)) throw 0;
-                    const blocks = data.blocks;
+                    // Support both {blocks: [...]} and {data: {blocks: [...]}}
+                    let blocks = null;
+                    if (Array.isArray(data.blocks)) {
+                        blocks = data.blocks;
+                    } else if (data.data && Array.isArray(data.data.blocks)) {
+                        blocks = data.data.blocks;
+                    } else {
+                        throw 0;
+                    }
                     let html = '<table><tr><th>Name</th><th>X</th><th>Y</th><th>Z</th></tr>';
                     for (const block of blocks) {
                         if (
