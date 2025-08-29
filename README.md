@@ -1,2 +1,2 @@
 # I-am-Fridgee.github.io
-This is my website to make Animations in Bloxd.io By Uploading schematicks.
+This website needs a code that can read .bloxdschem files. Like the goal is so Cool but secret for now :)
