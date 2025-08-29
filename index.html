@@ -1,65 +1,83 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <meta charset="utf-8">
-  <title>Bloxdschem Viewer</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Fridgee's Site</title>
   <style>
-    body { font-family: monospace; background: #111; color: #0f0; padding: 20px; }
-    #dropzone { border: 2px dashed #0f0; padding: 40px; text-align: center; cursor: pointer; }
-    pre { white-space: pre-wrap; word-wrap: break-word; }
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: linear-gradient(135deg, #89f7fe, #66a6ff);
+      overflow: hidden;
+      color: #fff;
+      text-align: center;
+    }
+
+    .content {
+      position: relative;
+      z-index: 2;
+      background: rgba(0, 0, 0, 0.6);
+      margin: 50px auto;
+      padding: 20px;
+      border-radius: 15px;
+      max-width: 600px;
+      box-shadow: 0 0 15px rgba(0,0,0,0.5);
+    }
+
+    h1 {
+      font-size: 2.5rem;
+      margin-bottom: 10px;
+    }
+
+    p {
+      font-size: 1.2rem;
+      margin: 10px 0;
+    }
+
+    .fridge {
+      position: absolute;
+      width: 100px;
+      opacity: 0.7;
+      animation: float 10s infinite ease-in-out;
+    }
+
+    @keyframes float {
+      0% { transform: translateY(100vh) rotate(0deg); }
+      50% { transform: translateY(50vh) rotate(180deg); }
+      100% { transform: translateY(-150px) rotate(360deg); }
+    }
+
+    .joke {
+      margin-top: 20px;
+      font-style: italic;
+      color: #ffd;
+    }
   </style>
 </head>
 <body>
-  <h1>Bloxdschem Viewer</h1>
-  <div id="dropzone">Drop your .bloxdschem file here</div>
-  <pre id="output"></pre>
+  <!-- Floating fridges -->
+  <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/1/19/Refrigerator_white_background.jpg/120px-Refrigerator_white_background.jpg" class="fridge" style="left:5%; animation-duration: 12s;">
+  <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/1/19/Refrigerator_white_background.jpg/120px-Refrigerator_white_background.jpg" class="fridge" style="left:40%; animation-duration: 15s;">
+  <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/1/19/Refrigerator_white_background.jpg/120px-Refrigerator_white_background.jpg" class="fridge" style="left:70%; animation-duration: 18s;">
 
-  <!-- Correct NBT Parser -->
-  <script src="https://unpkg.com/prismarine-nbt@2.2.1/dist/nbt-browser.min.js"></script>
+  <!-- Main Content -->
+  <div class="content">
+    <h1>Hello this is Fridgee's Site about me</h1>
+    <p>Email: <b>I-am-Fridgee@gmail.com</b></p>
+    <p>Bloxd nickname: <b>I_am_Fridgee</b></p>
+
+    <div class="joke" id="joke"></div>
+  </div>
+
   <script>
-    const dropzone = document.getElementById("dropzone");
-    const output = document.getElementById("output");
-
-    // Drag & Drop handlers
-    dropzone.addEventListener("dragover", e => {
-      e.preventDefault();
-      dropzone.style.background = "#222";
-    });
-    dropzone.addEventListener("dragleave", e => {
-      e.preventDefault();
-      dropzone.style.background = "none";
-    });
-    dropzone.addEventListener("drop", e => {
-      e.preventDefault();
-      dropzone.style.background = "none";
-      const file = e.dataTransfer.files[0];
-      if (file) {
-        readFile(file);
-      }
-    });
-
-    // File reader + NBT parser
-    function readFile(file) {
-      const reader = new FileReader();
-      reader.readAsArrayBuffer(file);
-
-      reader.onload = function(event) {
-        try {
-          const buffer = new Uint8Array(event.target.result);
-
-          // Use the correct global object: prismarineNbt
-          prismarineNbt.parse(buffer, (err, data) => {
-            if (err) {
-              output.textContent = "Error parsing: " + err.message;
-            } else {
-              output.textContent = JSON.stringify(data, null, 2);
-            }
-          });
-        } catch (err) {
-          output.textContent = "Failed: " + err.message;
-        }
-      };
-    }
+    const jokes = [
+      "Why did the fridge apply for a job? It wanted to chill at work!",
+      "What do you call a broken fridge? A cool-less wonder.",
+      "Why don’t fridges ever get lonely? Because they’re always chilling with friends!",
+      "What did the fridge say to the hungry kid? \"Close the door, I’m dressing!\""
+    ];
+    document.getElementById("joke").innerText = jokes[Math.floor(Math.random() * jokes.length)];
   </script>
 </body>
 </html>
