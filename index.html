@@ -1,83 +1,252 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Fridgee's Site</title>
-  <style>
-    body {
-      margin: 0;
-      font-family: Arial, sans-serif;
-      background: linear-gradient(135deg, #89f7fe, #66a6ff);
-      overflow: hidden;
-      color: #fff;
-      text-align: center;
-    }
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fridgee's Site</title>
+    <style>
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background: linear-gradient(135deg, #89f7fe, #66a6ff);
+            overflow: hidden;
+            color: #fff;
+            text-align: center;
+        }
 
-    .content {
-      position: relative;
-      z-index: 2;
-      background: rgba(0, 0, 0, 0.6);
-      margin: 50px auto;
-      padding: 20px;
-      border-radius: 15px;
-      max-width: 600px;
-      box-shadow: 0 0 15px rgba(0,0,0,0.5);
-    }
+        .content {
+            position: relative;
+            z-index: 2;
+            background: rgba(0, 0, 0, 0.6);
+            margin: 50px auto;
+            padding: 20px;
+            border-radius: 15px;
+            max-width: 600px;
+            box-shadow: 0 0 15px rgba(0,0,0,0.5);
+        }
 
-    h1 {
-      font-size: 2.5rem;
-      margin-bottom: 10px;
-    }
+        h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+        }
 
-    p {
-      font-size: 1.2rem;
-      margin: 10px 0;
-    }
+        p {
+            font-size: 1.2rem;
+            margin: 10px 0;
+        }
 
-    .fridge {
-      position: absolute;
-      width: 100px;
-      opacity: 0.7;
-      animation: float 10s infinite ease-in-out;
-    }
+        .fridge {
+            position: absolute;
+            width: 100px;
+            opacity: 0.7;
+            animation: float 10s infinite ease-in-out;
+        }
 
-    @keyframes float {
-      0% { transform: translateY(100vh) rotate(0deg); }
-      50% { transform: translateY(50vh) rotate(180deg); }
-      100% { transform: translateY(-150px) rotate(360deg); }
-    }
+        @keyframes float {
+            0% { transform: translateY(100vh) rotate(0deg); }
+            50% { transform: translateY(50vh) rotate(180deg); }
+            100% { transform: translateY(-150px) rotate(360deg); }
+        }
 
-    .joke {
-      margin-top: 20px;
-      font-style: italic;
-      color: #ffd;
-    }
-  </style>
+        .joke {
+            margin-top: 20px;
+            font-style: italic;
+            color: #ffd;
+        }
+    </style>
 </head>
 <body>
-  <!-- Floating fridges -->
-  <img src="https://www.leons.ca/cdn/shop/products/Shopify_JPEG-L2_57G18101_LRT18S4AWWC_F_3qtr_800x.jpg?v=1694460768" class="fridge" style="left:5%; animation-duration: 12s;">
-  <img src="https://www.leons.ca/cdn/shop/products/Shopify_JPEG-L2_57G18101_LRT18S4AWWC_F_3qtr_800x.jpg?v=1694460768" class="fridge" style="left:40%; animation-duration: 15s;">
-  <img src="https://www.leons.ca/cdn/shop/products/Shopify_JPEG-L2_57G18101_LRT18S4AWWC_F_3qtr_800x.jpg?v=1694460768" class="fridge" style="left:70%; animation-duration: 18s;">
+    <!-- Gambling Machine UI -->
+    <div id="gumball-container" style="position:fixed;bottom:30px;right:30px;z-index:10;">
+            <div id="gumball-machine" style="width:160px;height:260px;background:rgba(255,255,255,0.15);border-radius:30px 30px 60px 60px;box-shadow:0 4px 20px #0006;position:relative;padding:20px 20px 40px 20px;">
+                    <div style="text-align:center;">
+                            <div id="reels" style="display:flex;justify-content:center;align-items:center;font-size:2.5rem;height:48px;margin-bottom:10px;">
+                                    <span id="reel1">🍬</span>
+                                    <span id="reel2">🍬</span>
+                                    <span id="reel3">🍬</span>
+                            </div>
+                            <button id="spin-btn" style="margin-top:10px;padding:8px 24px;font-size:1.1rem;border-radius:20px;border:none;background:#ff5e62;color:#fff;cursor:pointer;box-shadow:0 2px 8px #0003;">Pull Handle</button>
+                            <div id="gumball-result" style="margin-top:12px;min-height:30px;font-size:1.1rem;"></div>
+                    </div>
+                    <div style="position:absolute;bottom:-30px;left:50%;transform:translateX(-50%);width:40px;height:60px;background:#c0c0c0;border-radius:20px;box-shadow:0 2px 8px #0003;"></div>
+            </div>
+    </div>
 
-  <!-- Main Content -->
-  <div class="content">
-    <h1>Hello this is Fridgee's Site about me</h1>
-    <p>Email: <b>I-am-Fridgee@gmail.com</b></p>
-    <p>Bloxd nickname: <b>I_am_Fridgee</b></p>
+    <!-- Dollar Sign Button -->
+    <button id="dollar-btn" title="Click for a surprise!" style="position:fixed;top:30px;right:30px;z-index:10;font-size:2.2rem;background:gold;border:none;border-radius:50%;width:54px;height:54px;box-shadow:0 2px 8px #0003;cursor:pointer;display:flex;align-items:center;justify-content:center;">💲</button>
 
-    <div class="joke" id="joke"></div>
-  </div>
+    <!-- Floating fridges -->
+    <img src="https://www.leons.ca/cdn/shop/products/Shopify_JPEG-L2_57G18101_LRT18S4AWWC_F_3qtr_800x.jpg?v=1694460768" class="fridge" style="left:5%; animation-duration: 12s;">
+    <img src="https://www.leons.ca/cdn/shop/products/Shopify_JPEG-L2_57G18101_LRT18S4AWWC_F_3qtr_800x.jpg?v=1694460768" class="fridge" style="left:40%; animation-duration: 15s;">
+    <img src="https://www.leons.ca/cdn/shop/products/Shopify_JPEG-L2_57G18101_LRT18S4AWWC_F_3qtr_800x.jpg?v=1694460768" class="fridge" style="left:70%; animation-duration: 18s;">
 
-  <script>
-    const jokes = [
-      "Why did the fridge apply for a job? It wanted to chill at work!",
-      "What do you call a broken fridge? A cool-less wonder.",
-      "Why don’t fridges ever get lonely? Because they’re always chilling with friends!",
-      "What did the fridge say to the hungry kid? \"Close the door, I’m dressing!\""
-    ];
-    document.getElementById("joke").innerText = jokes[Math.floor(Math.random() * jokes.length)];
-  </script>
+    <!-- Main Content -->
+    <div class="content">
+        <h1>Hello this is Fridgee's Site about me</h1>
+        <p>Email: <b>I-am-Fridgee@gmail.com</b></p>
+        <div class="joke" id="joke"></div>
+    </div>
+
+    <script>
+        const symbols = [
+                {emoji: "7️⃣", name: "Jackpot", weight: 1},
+                {emoji: "🤑", name: "Money", weight: 3},
+                {emoji: "?", name: "Mystery", weight: 5},
+                {emoji: "🍞", name: "Bread", weight: 7},
+                {emoji: "🍬", name: "Candy", weight: 12},
+                {emoji: "🍎", name: "Apple", weight: 10},
+        ];
+
+        function weightedRandomSymbol() {
+                const total = symbols.reduce((sum, s) => sum + s.weight, 0);
+                let r = Math.random() * total;
+                for (const s of symbols) {
+                        if (r < s.weight) return s.emoji;
+                        r -= s.weight;
+                }
+                return symbols[symbols.length-1].emoji;
+        }
+
+        const reels = [document.getElementById('reel1'), document.getElementById('reel2'), document.getElementById('reel3')];
+        const spinBtn = document.getElementById('spin-btn');
+        const resultDiv = document.getElementById('gumball-result');
+        let spinning = false;
+
+        function spinReelsAnimation(final, duration=4500) {
+                const start = Date.now();
+                const interval = 80;
+                let timer;
+                function animate() {
+                        const elapsed = Date.now() - start;
+                        if (elapsed < duration - 400) {
+                                reels.forEach(r => r.innerText = weightedRandomSymbol());
+                                timer = setTimeout(animate, interval);
+                        } else {
+                                let steps = [0, 200, 400];
+                                reels.forEach((r, i) => {
+                                        setTimeout(() => { r.innerText = final[i]; }, steps[i]);
+                                });
+                                setTimeout(() => {
+                                        spinning = false;
+                                        checkResult(final);
+                                }, Math.max(...steps) + 400);
+                        }
+                }
+                animate();
+        }
+
+        function checkResult(final) {
+                if (final[0] === final[1] && final[1] === final[2]) {
+                        switch(final[0]) {
+                                case "7️⃣":
+                                        resultDiv.innerHTML = "🎉 JACKPOT! <b>Confetti!</b> <span style='font-size:2rem;'>🎊🎊🎊</span>";
+                                        confetti();
+                                        break;
+                                case "🤑":
+                                        resultDiv.innerHTML = "💰 MONEY! <b>Money Confetti!</b> <span style='font-size:2rem;'>🤑🤑🤑</span>";
+                                        moneyConfetti();
+                                        break;
+                                case "?":
+                                        resultDiv.innerHTML = "❓ Mystery! The colors are changing!";
+                                        randomizeColors();
+                                        break;
+                                case "🍞":
+                                        resultDiv.innerHTML = "🍞 BREAD! You got a loaf! <span style='font-size:2rem;'>🍞</span>";
+                                        break;
+                                case "🍬":
+                                        resultDiv.innerHTML = "🍬 Sweet! You got candy!";
+                                        break;
+                                case "🍎":
+                                        resultDiv.innerHTML = "🍎 Apple! Healthy choice!";
+                                        break;
+                                default:
+                                        resultDiv.innerHTML = "You got something!";
+                        }
+                } else {
+                        resultDiv.innerHTML = "Try again!";
+                }
+        }
+
+        spinBtn.onclick = function() {
+                if (spinning) return;
+                spinning = true;
+                resultDiv.innerHTML = "";
+                const final = [weightedRandomSymbol(), weightedRandomSymbol(), weightedRandomSymbol()];
+                spinReelsAnimation(final, 4000 + Math.random()*2000);
+        };
+
+        function confetti() {
+                for(let i=0;i<30;i++) {
+                        let c = document.createElement('div');
+                        c.innerText = "🎊";
+                        c.style.position = 'fixed';
+                        c.style.left = (10 + Math.random()*80) + '%';
+                        c.style.top = '-40px';
+                        c.style.fontSize = (1.5 + Math.random()) + 'rem';
+                        c.style.pointerEvents = 'none';
+                        c.style.zIndex = 9999;
+                        document.body.appendChild(c);
+                        setTimeout(() => {
+                                c.style.transition = 'top 2.5s cubic-bezier(.2,.8,.2,1)';
+                                c.style.top = (60 + Math.random()*30) + '%';
+                        }, 10);
+                        setTimeout(() => c.remove(), 2600);
+                }
+        }
+
+        function moneyConfetti() {
+                for(let i=0;i<25;i++) {
+                        let c = document.createElement('div');
+                        c.innerText = "💵";
+                        c.style.position = 'fixed';
+                        c.style.left = (15 + Math.random()*70) + '%';
+                        c.style.top = '-40px';
+                        c.style.fontSize = (1.3 + Math.random()) + 'rem';
+                        c.style.pointerEvents = 'none';
+                        c.style.zIndex = 9999;
+                        document.body.appendChild(c);
+                        setTimeout(() => {
+                                c.style.transition = 'top 2.2s cubic-bezier(.2,.8,.2,1)';
+                                c.style.top = (60 + Math.random()*30) + '%';
+                        }, 10);
+                        setTimeout(() => c.remove(), 2300);
+                }
+        }
+
+        function randomizeColors() {
+                const c1 = `#${Math.floor(Math.random()*0xFFFFFF).toString(16).padStart(6,'0')}`;
+                const c2 = `#${Math.floor(Math.random()*0xFFFFFF).toString(16).padStart(6,'0')}`;
+                document.body.style.background = `linear-gradient(135deg, ${c1}, ${c2})`;
+                setTimeout(() => {
+                        document.body.style.background = '';
+                }, 4000);
+        }
+
+        document.getElementById('dollar-btn').onclick = function() {
+                let d = document.createElement('div');
+                d.innerHTML = "<span style='font-size:2.5rem;'>💸💸💸</span><br><b>You clicked the dollar!</b>";
+                d.style.position = 'fixed';
+                d.style.top = '80px';
+                d.style.right = '40px';
+                d.style.background = '#fff';
+                d.style.color = '#222';
+                d.style.padding = '18px 30px';
+                d.style.borderRadius = '18px';
+                d.style.boxShadow = '0 2px 12px #0004';
+                d.style.zIndex = 9999;
+                document.body.appendChild(d);
+                setTimeout(()=>d.remove(), 2200);
+        };
+
+        const jokes = [
+            "Why did the fridge apply for a job? It wanted to chill at work!",
+            "What do you call a broken fridge? A cool-less wonder.",
+            "Why don’t fridges ever get lonely? Because they’re always chilling with friends!",
+            "What did the fridge say to the hungry kid? \"Broke ahh!\"",
+            "What to do when the Fridge runs away? Catch it!",
+            "It's a Knoc Knoc joke, you start!"
+        ];
+        document.getElementById("joke").innerText = jokes[Math.floor(Math.random() * jokes.length)];
+    </script>
 </body>
 </html>
