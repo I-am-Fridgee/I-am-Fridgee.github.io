@@ -1,2 +1,2 @@
 # I-am-Fridgee.github.io
-This website needs a code that can read .bloxdschem files. Like the goal is so Cool but secret for now :)
+Well this is a part of the website I am making just for fun ;)
