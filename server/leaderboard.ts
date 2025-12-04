@@ -1,8 +1,8 @@
-import { router, publicProcedure, protectedProcedure } from "../trpc";
+import { router, publicProcedure, protectedProcedure } from "./_core/trpc";
 import { z } from "zod";
-import * as db from "../db";
-import { leaderboard } from "../../drizzle/schema";
-import { eq, desc } from "drizzle-orm";
+import { getTopPlayers, updatePlayerScore, getPlayerRank, getDb } from "./db";
+import { leaderboard } from "../drizzle/schema";
+import { desc, eq } from "drizzle-orm";
 
 export const leaderboardRouter = router({
   /**
@@ -15,38 +15,15 @@ export const leaderboardRouter = router({
       username: z.string().min(1).max(100).optional(),
     }))
     .mutation(async ({ input, ctx }) => {
+      if (!ctx.user) {
+        throw new Error("User not authenticated");
+      }
+
       const userId = ctx.user.id;
       const username = input.username || ctx.user.name || "Anonymous";
 
       try {
-        // Get existing leaderboard entry
-        const existingEntry = await db.db
-          .select()
-          .from(leaderboard)
-          .where(eq(leaderboard.userId, userId))
-          .limit(1);
-
-        if (existingEntry.length > 0) {
-          // Update if new score is higher
-          if (input.score > existingEntry[0].highScore) {
-            await db.db
-              .update(leaderboard)
-              .set({
-                highScore: input.score,
-                username: username,
-                updatedAt: new Date(),
-              })
-              .where(eq(leaderboard.userId, userId));
-          }
-        } else {
-          // Create new entry
-          await db.db.insert(leaderboard).values({
-            userId: userId,
-            username: username,
-            highScore: input.score,
-          });
-        }
-
+        await updatePlayerScore(userId, username, input.score);
         return {
           success: true,
           score: input.score,
@@ -65,19 +42,12 @@ export const leaderboardRouter = router({
   getTopPlayers: publicProcedure
     .input(z.object({
       limit: z.number().int().min(1).max(100).default(10),
-      offset: z.number().int().min(0).default(0),
     }))
     .query(async ({ input }) => {
       try {
-        const topPlayers = await db.db
-          .select()
-          .from(leaderboard)
-          .orderBy(desc(leaderboard.highScore))
-          .limit(input.limit)
-          .offset(input.offset);
-
+        const topPlayers = await getTopPlayers(input.limit);
         return topPlayers.map((entry, index) => ({
-          rank: input.offset + index + 1,
+          rank: index + 1,
           username: entry.username,
           highScore: entry.highScore,
           updatedAt: entry.updatedAt,
@@ -94,11 +64,26 @@ export const leaderboardRouter = router({
    */
   getPlayerRank: protectedProcedure
     .query(async ({ ctx }) => {
+      if (!ctx.user) {
+        throw new Error("User not authenticated");
+      }
+
       try {
         const userId = ctx.user.id;
+        const rank = await getPlayerRank(userId);
 
-        // Get player's entry
-        const playerEntry = await db.db
+        // Get player's score
+        const db = await getDb();
+        if (!db) {
+          return {
+            rank: null,
+            score: 0,
+            username: ctx.user.name || "Anonymous",
+            message: "Database not available",
+          };
+        }
+
+        const playerEntry = await db
           .select()
           .from(leaderboard)
           .where(eq(leaderboard.userId, userId))
@@ -113,19 +98,14 @@ export const leaderboardRouter = router({
           };
         }
 
-        // Count how many players have higher scores
-        const higherScores = await db.db
-          .select()
-          .from(leaderboard)
-          .where((col) => col.highScore > playerEntry[0].highScore);
-
-        const rank = higherScores.length + 1;
+        // Get total players for percentile
+        const allPlayers = await db.select().from(leaderboard);
 
         return {
           rank: rank,
           score: playerEntry[0].highScore,
           username: playerEntry[0].username,
-          totalPlayers: await db.db.select().from(leaderboard),
+          totalPlayers: allPlayers.length,
         };
       } catch (error) {
         console.error("[Leaderboard] Failed to get player rank:", error);
@@ -140,7 +120,16 @@ export const leaderboardRouter = router({
   getStats: publicProcedure
     .query(async () => {
       try {
-        const allEntries = await db.db.select().from(leaderboard);
+        const db = await getDb();
+        if (!db) {
+          return {
+            totalPlayers: 0,
+            highestScore: 0,
+            averageScore: 0,
+          };
+        }
+
+        const allEntries = await db.select().from(leaderboard);
 
         const totalPlayers = allEntries.length;
         const highestScore = allEntries.length > 0 
