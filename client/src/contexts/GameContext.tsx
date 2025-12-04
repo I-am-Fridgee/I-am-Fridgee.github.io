@@ -145,7 +145,7 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
   
   const [state, setState] = useState<GameState>(() => {
     // Load from cookies/local storage on init
-    const saved = localStorage.getItem("fridgee_casino_save");
+    const saved = localStorage.getItem("fridgee_casino_save-v2");
     return saved ? JSON.parse(saved) : INITIAL_STATE;
   });
 
