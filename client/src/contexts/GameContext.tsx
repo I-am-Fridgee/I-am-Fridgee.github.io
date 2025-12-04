@@ -151,7 +151,7 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   // Save to local storage whenever state changes
   useEffect(() => {
-    localStorage.setItem("fridgee_casino_save", JSON.stringify(state));
+    localStorage.setItem("fridgee_casino_save-v2", JSON.stringify(state));
   }, [state]);
 
   // Sync score to backend when coins change (if authenticated)
