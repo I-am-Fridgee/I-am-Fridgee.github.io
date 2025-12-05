@@ -1,400 +1,401 @@
-import { useGame } from "@/contexts/GameContext";
-import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Lock, Zap, MousePointer2, Clock, Palette, Dices, Spade, Sparkles, TrendingUp, Crown, DollarSign, Gem, Star, Flame, Target } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { useGame } from "@/contexts/GameContext";
+import { toast } from "sonner";
+
+interface ShopItem {
+  key: keyof typeof initialUpgrades;
+  name: string;
+  description: string;
+  cost: number;
+  icon: string;
+  category: "clicker" | "passive" | "cosmetic" | "game";
+}
+
+const initialUpgrades = {
+  doubleClick: true,
+  tripleClick: true,
+  clickPowerII: true,
+  autoClicker: true,
+  autoClickerBoost: true,
+  autoClickerPro: true,
+  autoClickerMax: true,
+  hyperClicker: true,
+  goldenDollar: true,
+  confettiClick: true,
+  backgroundTheme: true,
+  diceGame: true,
+  blackjackGame: true,
+  megaClick: true,
+  superAutoClicker: true,
+  turboMode: true,
+  luckyGambler: true,
+  vipStatus: true,
+  moneyMagnet: true,
+  clickMultiplierX5: true,
+  diamondClicker: true,
+  fortuneBoost: true,
+  highRoller: true,
+  rouletteGame: true,
+  pokerGame: true,
+  neonGlow: true,
+  particleTrail: true,
+  premiumTheme: true,
+  rainbowClicker: true,
+  starryBackground: true,
+  goldenFrame: true,
+  fireworksEffect: true,
+  velvetCurtains: true,
+};
+
+const SHOP_ITEMS: ShopItem[] = [
+  // Click Power Upgrades
+  {
+    key: "doubleClick",
+    name: "Double Click",
+    description: "+1 per click",
+    cost: 100,
+    icon: "👆",
+    category: "clicker",
+  },
+  {
+    key: "tripleClick",
+    name: "Triple Click",
+    description: "+2 per click",
+    cost: 500,
+    icon: "✌️",
+    category: "clicker",
+  },
+  {
+    key: "megaClick",
+    name: "Mega Click",
+    description: "+9 per click",
+    cost: 2000,
+    icon: "💥",
+    category: "clicker",
+  },
+  {
+    key: "clickPowerII",
+    name: "Click Power II",
+    description: "+1 per click (stackable)",
+    cost: 300,
+    icon: "⚡",
+    category: "clicker",
+  },
+
+  // Multipliers (REBALANCED)
+  {
+    key: "goldenDollar",
+    name: "Golden Dollar",
+    description: "×2 click power",
+    cost: 1000,
+    icon: "💰",
+    category: "clicker",
+  },
+  {
+    key: "clickMultiplierX5",
+    name: "Click Multiplier ×5",
+    description: "×5 click power",
+    cost: 8000,
+    icon: "🔥",
+    category: "clicker",
+  },
+  {
+    key: "diamondClicker",
+    name: "Diamond Clicker",
+    description: "×3 click power",
+    cost: 12000,
+    icon: "💎",
+    category: "clicker",
+  },
+
+  // Auto Clickers (REBALANCED)
+  {
+    key: "autoClicker",
+    name: "Auto Clicker",
+    description: "$1 every 10 seconds",
+    cost: 200,
+    icon: "🤖",
+    category: "passive",
+  },
+  {
+    key: "autoClickerBoost",
+    name: "Auto Clicker Boost",
+    description: "$5 every 10 seconds",
+    cost: 1000,
+    icon: "⚙️",
+    category: "passive",
+  },
+  {
+    key: "autoClickerPro",
+    name: "Auto Clicker Pro",
+    description: "$15 every 10 seconds",
+    cost: 3000,
+    icon: "🚀",
+    category: "passive",
+  },
+  {
+    key: "autoClickerMax",
+    name: "Auto Clicker Max",
+    description: "$25 every 10 seconds",
+    cost: 5000,
+    icon: "⭐",
+    category: "passive",
+  },
+  {
+    key: "superAutoClicker",
+    name: "Super Auto Clicker",
+    description: "$10 every 10 seconds",
+    cost: 2500,
+    icon: "💫",
+    category: "passive",
+  },
+  {
+    key: "hyperClicker",
+    name: "Hyper Clicker",
+    description: "Every 3 seconds (faster)",
+    cost: 4000,
+    icon: "⚡",
+    category: "passive",
+  },
+  {
+    key: "turboMode",
+    name: "Turbo Mode",
+    description: "Every 5 seconds",
+    cost: 2000,
+    icon: "🏎️",
+    category: "passive",
+  },
+
+  // Passive Income
+  {
+    key: "moneyMagnet",
+    name: "Money Magnet",
+    description: "$50 every 30 seconds",
+    cost: 3000,
+    icon: "🧲",
+    category: "passive",
+  },
+  {
+    key: "fortuneBoost",
+    name: "Fortune Boost",
+    description: "Increased passive income",
+    cost: 5000,
+    icon: "🍀",
+    category: "passive",
+  },
+
+  // Games
+  {
+    key: "diceGame",
+    name: "Dice Game",
+    description: "Roll dice for coins",
+    cost: 1000,
+    icon: "🎲",
+    category: "game",
+  },
+  {
+    key: "blackjackGame",
+    name: "Blackjack",
+    description: "Classic card game",
+    cost: 2000,
+    icon: "🃏",
+    category: "game",
+  },
+  {
+    key: "rouletteGame",
+    name: "Roulette",
+    description: "Spin the wheel",
+    cost: 2500,
+    icon: "🎡",
+    category: "game",
+  },
+  {
+    key: "pokerGame",
+    name: "Poker",
+    description: "Texas Hold'em (50k entry)",
+    cost: 5000,
+    icon: "♠️",
+    category: "game",
+  },
+
+  // Special
+  {
+    key: "highRoller",
+    name: "High Roller",
+    description: "Bet up to 1000 chips",
+    cost: 10000,
+    icon: "👑",
+    category: "clicker",
+  },
+  {
+    key: "vipStatus",
+    name: "VIP Status",
+    description: "Special perks & bonuses",
+    cost: 15000,
+    icon: "🎖️",
+    category: "clicker",
+  },
+  {
+    key: "luckyGambler",
+    name: "Lucky Gambler",
+    description: "Increased game winnings",
+    cost: 8000,
+    icon: "🍀",
+    category: "clicker",
+  },
+
+  // Cosmetics
+  {
+    key: "confettiClick",
+    name: "Confetti Click",
+    description: "Particles on click",
+    cost: 500,
+    icon: "🎉",
+    category: "cosmetic",
+  },
+  {
+    key: "neonGlow",
+    name: "Neon Glow",
+    description: "Glowing effect",
+    cost: 750,
+    icon: "✨",
+    category: "cosmetic",
+  },
+  {
+    key: "particleTrail",
+    name: "Particle Trail",
+    description: "Cursor trail effect",
+    cost: 600,
+    icon: "🌟",
+    category: "cosmetic",
+  },
+  {
+    key: "backgroundTheme",
+    name: "Cool Theme",
+    description: "Alternative background",
+    cost: 400,
+    icon: "🎨",
+    category: "cosmetic",
+  },
+  {
+    key: "premiumTheme",
+    name: "Premium Theme",
+    description: "Purple & gold theme",
+    cost: 1200,
+    icon: "👑",
+    category: "cosmetic",
+  },
+  {
+    key: "rainbowClicker",
+    name: "Rainbow Clicker",
+    description: "Rainbow colors",
+    cost: 350,
+    icon: "🌈",
+    category: "cosmetic",
+  },
+  {
+    key: "starryBackground",
+    name: "Starry Night",
+    description: "Animated stars",
+    cost: 600,
+    icon: "✨",
+    category: "cosmetic",
+  },
+  {
+    key: "goldenFrame",
+    name: "Golden Frame",
+    description: "Gold border",
+    cost: 800,
+    icon: "🖼️",
+    category: "cosmetic",
+  },
+  {
+    key: "fireworksEffect",
+    name: "Fireworks",
+    description: "Big win fireworks",
+    cost: 1200,
+    icon: "🎆",
+    category: "cosmetic",
+  },
+  {
+    key: "velvetCurtains",
+    name: "Velvet Curtains",
+    description: "Theater curtains",
+    cost: 1000,
+    icon: "🎭",
+    category: "cosmetic",
+  },
+];
 
 export default function Shop() {
   const { state, purchaseUpgrade } = useGame();
 
-  const upgrades = [
-    {
-      id: "doubleClick",
-      name: "Double Click",
-      description: "Earn $2 per click instead of $1.",
-      cost: 50,
-      icon: <MousePointer2 className="w-5 h-5 text-amber-400" />,
-      purchased: state.upgrades.doubleClick,
-      oneTime: true,
-    },
-    {
-      id: "tripleClick",
-      name: "Triple Click",
-      description: "Earn $3 per click instead of $1.",
-      cost: 200,
-      icon: <MousePointer2 className="w-5 h-5 text-amber-300" />,
-      purchased: state.upgrades.tripleClick,
-      oneTime: true,
-    },
-    {
-      id: "clickPowerII",
-      name: "Click Power II",
-      description: "Increase base click value by +1 (Stacks). Cost increases 1.5x each purchase.",
-      cost: Math.floor(1500 * Math.pow(1.5, state.upgrades.clickPowerII)),
-      icon: <Zap className="w-5 h-5 text-yellow-400" />,
-      purchased: false, // Always purchasable
-      count: state.upgrades.clickPowerII,
-      oneTime: false,
-    },
-    {
-      id: "autoClicker",
-      name: "Auto Clicker",
-      description: "Earn $1 every 10 seconds automatically.",
-      cost: 300,
-      icon: <Clock className="w-5 h-5 text-blue-400" />,
-      purchased: state.upgrades.autoClicker,
-      oneTime: true,
-    },
-    {
-      id: "autoClickerBoost",
-      name: "Auto Clicker Boost",
-      description: "Boost Auto Clicker to $5 every 10s.",
-      cost: 1000,
-      icon: <Clock className="w-5 h-5 text-blue-300" />,
-      purchased: state.upgrades.autoClickerBoost,
-      oneTime: true,
-      requires: "autoClicker",
-    },
-    {
-      id: "autoClickerPro",
-      name: "Auto Clicker Pro",
-      description: "Increase Auto Clicker to $15 every 10s.",
-      cost: 3500,
-      icon: <Clock className="w-5 h-5 text-blue-200" />,
-      purchased: state.upgrades.autoClickerPro,
-      oneTime: true,
-      requires: "autoClickerBoost",
-    },
-    {
-      id: "autoClickerMax",
-      name: "Auto Clicker Max",
-      description: "Maximize Auto Clicker to $25 every 10s.",
-      cost: 7500,
-      icon: <Clock className="w-5 h-5 text-cyan-300" />,
-      purchased: state.upgrades.autoClickerMax,
-      oneTime: true,
-      requires: "autoClickerPro",
-    },
-    {
-      id: "hyperClicker",
-      name: "Hyper Clicker",
-      description: "Auto Clicker speed increased to every 3 seconds.",
-      cost: 10000,
-      icon: <Zap className="w-5 h-5 text-yellow-300" />,
-      purchased: state.upgrades.hyperClicker,
-      oneTime: true,
-      requires: "turboMode",
-    },
-    {
-      id: "goldenDollar",
-      name: "Golden Dollar",
-      description: "Double your click value permanently.",
-      cost: 500,
-      icon: <div className="text-xl">💰</div>,
-      purchased: state.upgrades.goldenDollar,
-      oneTime: true,
-    },
-    {
-      id: "confettiClick",
-      name: "Confetti Click",
-      description: "Throws random particles on click.",
-      cost: 75,
-      icon: <div className="text-xl">🎉</div>,
-      purchased: state.upgrades.confettiClick,
-      oneTime: true,
-    },
-    {
-      id: "backgroundTheme",
-      name: "Cool Theme",
-      description: "Change background to a cool theme.",
-      cost: 80,
-      icon: <Palette className="w-5 h-5 text-purple-400" />,
-      purchased: state.upgrades.backgroundTheme,
-      oneTime: true,
-    },
-    {
-      id: "diceGame",
-      name: "Dice Game",
-      description: "Unlock the Dice betting game.",
-      cost: 500,
-      icon: <Dices className="w-5 h-5 text-red-400" />,
-      purchased: state.upgrades.diceGame,
-      oneTime: true,
-    },
-    {
-      id: "blackjackGame",
-      name: "Blackjack",
-      description: "Unlock the Blackjack card game.",
-      cost: 1000,
-      icon: <Spade className="w-5 h-5 text-slate-200" />,
-      purchased: state.upgrades.blackjackGame,
-      oneTime: true,
-    },
-    // New Upgrades
-    {
-      id: "megaClick",
-      name: "Mega Click",
-      description: "Earn $10 per click.",
-      cost: 5000,
-      icon: <MousePointer2 className="w-5 h-5 text-red-500" />,
-      purchased: state.upgrades.megaClick,
-      oneTime: true,
-    },
-    {
-      id: "superAutoClicker",
-      name: "Super Auto Clicker",
-      description: "Auto clicker earns $10 every 10s.",
-      cost: 3000,
-      icon: <Clock className="w-5 h-5 text-cyan-400" />,
-      purchased: state.upgrades.superAutoClicker,
-      oneTime: true,
-      requires: "autoClicker",
-    },
-    {
-      id: "turboMode",
-      name: "Turbo Mode",
-      description: "Auto clicker speed doubles (every 5s).",
-      cost: 2500,
-      icon: <Zap className="w-5 h-5 text-orange-400" />,
-      purchased: state.upgrades.turboMode,
-      oneTime: true,
-      requires: "autoClicker",
-    },
-    {
-      id: "luckyGambler",
-      name: "Lucky Gambler",
-      description: "Increase odds in all games by 5%.",
-      cost: 1500,
-      icon: <Star className="w-5 h-5 text-yellow-300" />,
-      purchased: state.upgrades.luckyGambler,
-      oneTime: true,
-    },
-    {
-      id: "vipStatus",
-      name: "VIP Status",
-      description: "Unlock exclusive features and bonuses.",
-      cost: 10000,
-      icon: <Crown className="w-5 h-5 text-purple-400" />,
-      purchased: state.upgrades.vipStatus,
-      oneTime: true,
-    },
-    {
-      id: "moneyMagnet",
-      name: "Money Magnet",
-      description: "Passive income: $50 every 30 seconds.",
-      cost: 4000,
-      icon: <DollarSign className="w-5 h-5 text-green-400" />,
-      purchased: state.upgrades.moneyMagnet,
-      oneTime: true,
-    },
-    {
-      id: "clickMultiplierX5",
-      name: "Click Multiplier x5",
-      description: "5x click value.",
-      cost: 8000,
-      icon: <TrendingUp className="w-5 h-5 text-pink-400" />,
-      purchased: state.upgrades.clickMultiplierX5,
-      oneTime: true,
-    },
-    {
-      id: "diamondClicker",
-      name: "Diamond Clicker",
-      description: "Triple all earnings permanently.",
-      cost: 15000,
-      icon: <Gem className="w-5 h-5 text-blue-300" />,
-      purchased: state.upgrades.diamondClicker,
-      oneTime: true,
-    },
-    {
-      id: "fortuneBoost",
-      name: "Fortune Boost",
-      description: "Slot machine jackpot odds improve.",
-      cost: 6000,
-      icon: <Target className="w-5 h-5 text-amber-400" />,
-      purchased: state.upgrades.fortuneBoost,
-      oneTime: true,
-    },
-    {
-      id: "highRoller",
-      name: "High Roller",
-      description: "Unlock max bet limits in games.",
-      cost: 20000,
-      icon: <Flame className="w-5 h-5 text-red-600" />,
-      purchased: state.upgrades.highRoller,
-      oneTime: true,
-    },
-    {
-      id: "rouletteGame",
-      name: "Roulette",
-      description: "Unlock the Roulette wheel game.",
-      cost: 2000,
-      icon: <div className="text-xl">🎰</div>,
-      purchased: state.upgrades.rouletteGame,
-      oneTime: true,
-    },
-    // Cosmetics
-    {
-      id: "neonGlow",
-      name: "Neon Glow Effect",
-      description: "Adds neon glow to the clicker.",
-      cost: 150,
-      icon: <Sparkles className="w-5 h-5 text-cyan-300" />,
-      purchased: state.upgrades.neonGlow,
-      oneTime: true,
-    },
-    {
-      id: "particleTrail",
-      name: "Particle Trail",
-      description: "Colorful particle trail on mouse.",
-      cost: 250,
-      icon: <Sparkles className="w-5 h-5 text-pink-300" />,
-      purchased: state.upgrades.particleTrail,
-      oneTime: true,
-    },
-    {
-      id: "premiumTheme",
-      name: "Premium Theme",
-      description: "Exclusive dark purple/gold scheme.",
-      cost: 500,
-      icon: <Palette className="w-5 h-5 text-indigo-400" />,
-      purchased: state.upgrades.premiumTheme,
-      oneTime: true,
-    },
-    // New Cosmetics
-    {
-      id: "rainbowClicker",
-      name: "Rainbow Clicker",
-      description: "Clicker cycles through rainbow colors.",
-      cost: 350,
-      icon: <div className="text-xl">🌈</div>,
-      purchased: state.upgrades.rainbowClicker,
-      oneTime: true,
-    },
-    {
-      id: "starryBackground",
-      name: "Starry Night",
-      description: "Animated starfield background.",
-      cost: 600,
-      icon: <div className="text-xl">✨</div>,
-      purchased: state.upgrades.starryBackground,
-      oneTime: true,
-    },
-    {
-      id: "goldenFrame",
-      name: "Golden Frame",
-      description: "Luxurious gold border around UI.",
-      cost: 800,
-      icon: <div className="text-xl">🖼️</div>,
-      purchased: state.upgrades.goldenFrame,
-      oneTime: true,
-    },
-    {
-      id: "fireworksEffect",
-      name: "Fireworks",
-      description: "Fireworks explode on big wins.",
-      cost: 1200,
-      icon: <div className="text-xl">🎆</div>,
-      purchased: state.upgrades.fireworksEffect,
-      oneTime: true,
-    },
-    {
-      id: "velvetCurtains",
-      name: "Velvet Curtains",
-      description: "Rich red velvet theater curtains.",
-      cost: 1500,
-      icon: <div className="text-xl">🎭</div>,
-      purchased: state.upgrades.velvetCurtains,
-      oneTime: true,
-    },
-  ];
+  const handlePurchase = (item: ShopItem) => {
+    if (state.upgrades[item.key]) {
+      toast.info(`${item.name} already purchased!`);
+      return;
+    }
+
+    if (purchaseUpgrade(item.key, item.cost)) {
+      toast.success(`Purchased ${item.name}!`);
+    } else {
+      toast.error(`Not enough coins! Need $${item.cost}`);
+    }
+  };
+
+  const categories = ["clicker", "passive", "game", "cosmetic"] as const;
 
   return (
-    <Card className="h-full bg-black/40 border-amber-500/30 backdrop-blur-md text-amber-50 shadow-2xl">
-      <CardHeader className="border-b border-amber-500/20 pb-4">
-        <CardTitle className="text-2xl font-display text-amber-200 flex items-center gap-2">
-          <span>🛒</span> The Exchange
-        </CardTitle>
-        <CardDescription className="text-amber-200/50">
-          Invest your earnings to maximize profit.
-        </CardDescription>
-      </CardHeader>
-      <CardContent className="p-0">
-        <ScrollArea className="h-[600px] p-4">
-          <div className="grid gap-4">
-            {upgrades.map((item) => {
-              // Check requirements
-              // @ts-ignore
-              if (item.requires && !state.upgrades[item.requires]) {
-                return null;
-              }
+    <div className="space-y-8">
+      {categories.map((category) => {
+        const items = SHOP_ITEMS.filter((item) => item.category === category);
+        const categoryName = {
+          clicker: "⚡ Click Power",
+          passive: "💰 Passive Income",
+          game: "🎮 Games",
+          cosmetic: "✨ Cosmetics",
+        }[category];
 
-              const isAffordable = state.coins >= item.cost;
-              const isPurchased = item.oneTime && item.purchased;
-
-              return (
-                <div
-                  key={item.id}
-                  className={`
-                    relative group overflow-hidden rounded-lg border p-4 transition-all duration-300
-                    ${isPurchased 
-                      ? "bg-emerald-900/20 border-emerald-500/30 opacity-60" 
-                      : "bg-zinc-900/60 border-amber-500/20 hover:border-amber-500/60 hover:bg-zinc-800/80"
-                    }
-                  `}
-                >
-                  <div className="flex items-start justify-between gap-4">
-                    <div className="flex items-center gap-4">
-                      <div className={`
-                        p-3 rounded-full bg-black/40 border border-white/5
-                        ${isPurchased ? "text-emerald-400" : "text-amber-100"}
-                      `}>
-                        {item.icon}
-                      </div>
-                      <div>
-                        <h3 className="font-bold text-amber-100 flex items-center gap-2">
-                          {item.name}
-                          {item.count !== undefined && item.count > 0 && (
-                            <Badge variant="secondary" className="bg-amber-500/20 text-amber-300 border-0 text-[10px]">
-                              Lvl {item.count}
-                            </Badge>
-                          )}
-                        </h3>
-                        <p className="text-xs text-amber-200/60 mt-1 leading-relaxed">
-                          {item.description}
-                        </p>
-                      </div>
-                    </div>
-
-                    <div className="flex flex-col items-end gap-2">
-                      {isPurchased ? (
-                        <Badge className="bg-emerald-500/20 text-emerald-400 border-emerald-500/50">
-                          Owned
-                        </Badge>
-                      ) : (
+        return (
+          <div key={category}>
+            <h2 className="text-2xl font-display text-amber-200 mb-4">{categoryName}</h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {items.map((item) => {
+                const isPurchased = state.upgrades[item.key];
+                return (
+                  <Card
+                    key={item.key}
+                    className={`bg-black/40 border-amber-500/30 backdrop-blur-md transition-all ${
+                      isPurchased ? "opacity-50" : "hover:border-amber-500/60"
+                    }`}
+                  >
+                    <CardContent className="p-4">
+                      <div className="text-4xl mb-2">{item.icon}</div>
+                      <h3 className="text-amber-100 font-semibold">{item.name}</h3>
+                      <p className="text-amber-200/60 text-sm mb-3">{item.description}</p>
+                      <div className="flex justify-between items-center">
+                        <span className="text-amber-300 font-bold">${item.cost.toLocaleString()}</span>
                         <Button
-                          size="sm"
-                          disabled={!isAffordable}
-                          onClick={() => purchaseUpgrade(item.id as any, item.cost)}
-                          className={`
-                            font-mono font-bold transition-all
-                            ${isAffordable 
-                              ? "bg-amber-600 hover:bg-amber-500 text-white shadow-[0_0_15px_rgba(245,158,11,0.3)]" 
-                              : "bg-zinc-800 text-zinc-500 cursor-not-allowed"
-                            }
-                          `}
+                          onClick={() => handlePurchase(item)}
+                          disabled={isPurchased}
+                          className={`text-xs ${
+                            isPurchased
+                              ? "bg-gray-600 cursor-not-allowed"
+                              : "bg-amber-600 hover:bg-amber-700"
+                          }`}
                         >
-                          ${item.cost}
+                          {isPurchased ? "✓ Owned" : "Buy"}
                         </Button>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              );
-            })}
+                      </div>
+                    </CardContent>
+                  </Card>
+                );
+              })}
+            </div>
           </div>
-        </ScrollArea>
-      </CardContent>
-    </Card>
+        );
+      })}
+    </div>
   );
 }
