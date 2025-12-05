@@ -1,5 +1,5 @@
-import { useGame } from "@/contexts/GameContext";
 import { useAuth } from "@/contexts/AuthContext";
+import { useGame } from "@/contexts/GameContext";
 import { cn } from "@/lib/utils";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
@@ -13,6 +13,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
   const [trail, setTrail] = useState<{ id: number; x: number; y: number }[]>([]);
   const [showAuthModal, setShowAuthModal] = useState(false);
+  const [stars, setStars] = useState<{ id: number; x: number; y: number }[]>([]);
 
   const handleLogout = async () => {
     try {
@@ -23,55 +24,113 @@ export default function Layout({ children }: { children: React.ReactNode }) {
     }
   };
 
+  // Particle Trail
   useEffect(() => {
-    if (!state.upgrades.particleTrail) return;
+    if (!state.activeCosmetics.particleTrail) return;
 
     const handleMouseMove = (e: MouseEvent) => {
       setMousePos({ x: e.clientX, y: e.clientY });
-      
+
       const newParticle = { id: Date.now() + Math.random(), x: e.clientX, y: e.clientY };
       setTrail((prev) => [...prev.slice(-15), newParticle]);
     };
 
     window.addEventListener("mousemove", handleMouseMove);
     return () => window.removeEventListener("mousemove", handleMouseMove);
-  }, [state.upgrades.particleTrail]);
+  }, [state.activeCosmetics.particleTrail]);
+
+  // Starry Background Animation
+  useEffect(() => {
+    if (!state.activeCosmetics.starryBackground) {
+      setStars([]);
+      return;
+    }
+
+    // Generate stars
+    const newStars = Array.from({ length: 100 }, (_, i) => ({
+      id: i,
+      x: Math.random() * 100,
+      y: Math.random() * 100,
+    }));
+    setStars(newStars);
+  }, [state.activeCosmetics.starryBackground]);
 
   return (
-    <div className={cn(
-      "min-h-screen w-full text-amber-50 font-sans overflow-x-hidden transition-colors duration-700",
-      state.upgrades.premiumTheme 
-        ? "bg-gradient-to-br from-purple-950 via-indigo-950 to-purple-900" 
-        : state.upgrades.backgroundTheme 
-        ? "bg-slate-900" 
-        : "bg-zinc-950"
-    )}>
+    <div
+      className={cn(
+        "min-h-screen w-full text-amber-50 font-sans overflow-x-hidden transition-colors duration-700",
+        state.activeCosmetics.premiumTheme
+          ? "bg-gradient-to-br from-purple-950 via-indigo-950 to-purple-900"
+          : state.activeCosmetics.backgroundTheme
+          ? "bg-slate-900"
+          : "bg-zinc-950"
+      )}
+    >
+      {/* Starry Night Background */}
+      {state.activeCosmetics.starryBackground && (
+        <div className="fixed inset-0 z-0 pointer-events-none overflow-hidden">
+          {stars.map((star) => (
+            <div
+              key={star.id}
+              className="absolute w-1 h-1 bg-white rounded-full animate-pulse"
+              style={{
+                left: `${star.x}%`,
+                top: `${star.y}%`,
+                opacity: Math.random() * 0.7 + 0.3,
+                animation: `twinkle ${2 + Math.random() * 3}s infinite`,
+              }}
+            />
+          ))}
+          <style>{`
+            @keyframes twinkle {
+              0%, 100% { opacity: 0.3; }
+              50% { opacity: 1; }
+            }
+          `}</style>
+        </div>
+      )}
+
+      {/* Velvet Curtains */}
+      {state.activeCosmetics.velvetCurtains && (
+        <>
+          <div className="fixed left-0 top-0 z-0 w-20 h-full bg-gradient-to-r from-red-900 via-red-800 to-transparent opacity-60 pointer-events-none" />
+          <div className="fixed right-0 top-0 z-0 w-20 h-full bg-gradient-to-l from-red-900 via-red-800 to-transparent opacity-60 pointer-events-none" />
+        </>
+      )}
+
       {/* Particle Trail */}
-      {state.upgrades.particleTrail && trail.map((particle) => (
-        <div
-          key={particle.id}
-          className="fixed w-2 h-2 rounded-full pointer-events-none z-[9998] animate-ping"
-          style={{
-            left: `${particle.x}px`,
-            top: `${particle.y}px`,
-            background: `hsl(${(particle.id * 137.5) % 360}, 70%, 60%)`,
-          }}
-        />
-      ))}
+      {state.activeCosmetics.particleTrail &&
+        trail.map((particle) => (
+          <div
+            key={particle.id}
+            className="fixed w-2 h-2 rounded-full pointer-events-none z-[9998] animate-ping"
+            style={{
+              left: `${particle.x}px`,
+              top: `${particle.y}px`,
+              background: `hsl(${(particle.id * 137.5) % 360}, 70%, 60%)`,
+            }}
+          />
+        ))}
+
       {/* Background Image Layer */}
-      <div 
+      <div
         className="fixed inset-0 z-0 opacity-40 pointer-events-none mix-blend-overlay"
         style={{
           backgroundImage: `url('/images/art_deco_bg.jpg')`,
-          backgroundSize: 'cover',
-          backgroundPosition: 'center',
-          backgroundRepeat: 'no-repeat'
+          backgroundSize: "cover",
+          backgroundPosition: "center",
+          backgroundRepeat: "no-repeat",
         }}
       />
-      
+
       {/* Vignette & Texture Overlay */}
       <div className="fixed inset-0 z-0 pointer-events-none bg-[radial-gradient(circle_at_center,transparent_0%,rgba(0,0,0,0.8)_100%)]" />
-      
+
+      {/* Golden Frame Border */}
+      {state.activeCosmetics.goldenFrame && (
+        <div className="fixed inset-0 z-0 pointer-events-none border-8 border-yellow-400/30 shadow-inset" />
+      )}
+
       {/* Content */}
       <div className="relative z-10 flex flex-col min-h-screen">
         <header className="w-full p-6 border-b border-amber-500/20 bg-black/40 backdrop-blur-md sticky top-0 z-50">
@@ -82,7 +141,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
               </h1>
               <p className="text-xs text-amber-400/60 tracking-widest uppercase">Est. 2025 • iamfridgee@gmail.com</p>
             </div>
-            
+
             <div className="flex items-center gap-4">
               <div className="flex flex-col items-end">
                 <span className="text-xs text-blue-400/80 uppercase tracking-wider flex items-center gap-1">
@@ -101,45 +160,35 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                 <span className="text-xl font-bold font-mono text-emerald-100">{state.chips.toLocaleString()}</span>
               </div>
               <div className="h-8 w-px bg-amber-500/30" />
+
               {user ? (
-                <>
-                  <div className="flex flex-col items-end">
-                    <span className="text-xs text-purple-400/80 uppercase tracking-wider flex items-center gap-1">
-                      <User className="w-3 h-3" /> Player
-                    </span>
-                    <span className="text-sm font-bold text-purple-100">{user.displayName || 'Player'}</span>
-                  </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-sm text-amber-300">{user.email?.split("@")[0]}</span>
                   <Button
-                    variant="outline"
-                    size="sm"
                     onClick={handleLogout}
-                    className="border-purple-500/50 text-purple-400 hover:bg-purple-500/10"
+                    variant="ghost"
+                    size="sm"
+                    className="text-amber-400 hover:text-amber-300"
                   >
                     <LogOut className="w-4 h-4" />
                   </Button>
-                </>
+                </div>
               ) : (
                 <Button
-                  variant="outline"
-                  size="sm"
                   onClick={() => setShowAuthModal(true)}
-                  className="border-amber-500/50 text-amber-400 hover:bg-amber-500/10"
+                  variant="ghost"
+                  size="sm"
+                  className="text-amber-400 hover:text-amber-300"
                 >
-                  <LogIn className="w-4 h-4 mr-2" />
-                  Sign In
+                  <LogIn className="w-4 h-4" />
                 </Button>
               )}
-              <div className="h-8 w-px bg-amber-500/30" />
+
               <Button
-                variant="outline"
+                onClick={resetGame}
+                variant="ghost"
                 size="sm"
-                onClick={() => {
-                  if (confirm("Are you sure you want to reset all progress? This cannot be undone!")) {
-                    resetGame();
-                    toast.success("Progress reset!");
-                  }
-                }}
-                className="border-red-500/50 text-red-400 hover:bg-red-500/10"
+                className="text-red-400 hover:text-red-300"
               >
                 <RotateCcw className="w-4 h-4" />
               </Button>
@@ -147,16 +196,14 @@ export default function Layout({ children }: { children: React.ReactNode }) {
           </div>
         </header>
 
-        <main className="flex-1 container mx-auto py-8 px-4">
-          {children}
-        </main>
+        <main className="flex-1 container mx-auto py-8">{children}</main>
 
-        <footer className="p-6 text-center text-amber-900/40 text-sm border-t border-amber-900/20 bg-black/60 backdrop-blur-sm">
-          <p>© 2025 Fridgee's Casino. Please gamble responsibly (with fake coins).</p>
+        <footer className="border-t border-amber-500/20 bg-black/40 backdrop-blur-md p-4 text-center text-amber-200/60 text-xs">
+          <p>© 2025 Fridgee's Casino. All rights reserved.</p>
         </footer>
       </div>
 
-      <AuthModal open={showAuthModal} onClose={() => setShowAuthModal(false)} />
+      <AuthModal open={showAuthModal} onOpenChange={setShowAuthModal} />
     </div>
   );
 }
