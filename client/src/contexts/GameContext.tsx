@@ -1,6 +1,6 @@
 import { createContext, useContext, useState, useEffect } from "react";
+import { useAuth } from "./AuthContext";
 import { trpc } from "@/lib/trpc";
-import { useAuth } from "@/contexts/AuthContext";
 
 interface GameState {
   coins: number;
@@ -8,7 +8,7 @@ interface GameState {
   clickCount: number;
   clickValue: number;
   autoClickerValue: number;
-  autoClickerInterval: number; // in milliseconds
+  autoClickerInterval: number;
   activeCosmetics: {
     confettiClick: boolean;
     backgroundTheme: boolean;
@@ -24,7 +24,7 @@ interface GameState {
   upgrades: {
     doubleClick: boolean;
     tripleClick: boolean;
-    clickPowerII: number; // count of purchases
+    clickPowerII: number;
     autoClicker: boolean;
     autoClickerBoost: boolean;
     autoClickerPro: boolean;
@@ -35,7 +35,6 @@ interface GameState {
     backgroundTheme: boolean;
     diceGame: boolean;
     blackjackGame: boolean;
-    // New upgrades
     megaClick: boolean;
     superAutoClicker: boolean;
     turboMode: boolean;
@@ -47,6 +46,7 @@ interface GameState {
     fortuneBoost: boolean;
     highRoller: boolean;
     rouletteGame: boolean;
+    pokerGame: boolean;
     neonGlow: boolean;
     particleTrail: boolean;
     premiumTheme: boolean;
@@ -91,7 +91,6 @@ const INITIAL_STATE: GameState = {
     backgroundTheme: false,
     diceGame: false,
     blackjackGame: false,
-    // New upgrades
     megaClick: false,
     superAutoClicker: false,
     turboMode: false,
@@ -103,6 +102,7 @@ const INITIAL_STATE: GameState = {
     fortuneBoost: false,
     highRoller: false,
     rouletteGame: false,
+    pokerGame: false,
     neonGlow: false,
     particleTrail: false,
     premiumTheme: false,
@@ -126,6 +126,7 @@ interface GameContextType {
   purchaseUpgrade: (upgradeKey: keyof GameState["upgrades"], cost: number) => boolean;
   incrementClickCount: () => void;
   resetGame: () => void;
+  syncToDatabase: () => Promise<void>;
 }
 
 const GameContext = createContext<GameContextType | undefined>(undefined);
@@ -142,26 +143,74 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const { user, loading: authLoading } = useAuth();
   const isAuthenticated = !!user;
   const submitScoreMutation = trpc.leaderboard.submitScore.useMutation();
-  
+  const getUserDataMutation = trpc.leaderboard.getUserData.useMutation();
+  const saveGameDataMutation = trpc.leaderboard.saveGameData.useMutation();
+
   const [state, setState] = useState<GameState>(() => {
-    // Load from localStorage with -v2 suffix (reset coins from old glitch)
+    // Load from localStorage with -v2 suffix
     const saved = localStorage.getItem("fridgee_casino_save-v2");
     return saved ? JSON.parse(saved) : INITIAL_STATE;
   });
 
-  // Save to local storage whenever state changes
+  // Save to localStorage whenever state changes
   useEffect(() => {
     localStorage.setItem("fridgee_casino_save-v2", JSON.stringify(state));
   }, [state]);
 
-  // Sync score to backend when coins change (if authenticated)
+  // Sync from database when user logs in
+  useEffect(() => {
+    const syncFromDatabase = async () => {
+      if (isAuthenticated && user && !authLoading) {
+        try {
+          const userData = await getUserDataMutation.mutateAsync();
+          if (userData) {
+            // Merge database data with local data (database takes priority for coins/chips)
+            setState((prev) => ({
+              ...prev,
+              coins: userData.coins ?? prev.coins,
+              chips: userData.chips ?? prev.chips,
+              clickCount: userData.clickCount ?? prev.clickCount,
+              upgrades: userData.upgrades ? JSON.parse(userData.upgrades) : prev.upgrades,
+              activeCosmetics: userData.activeCosmetics ? JSON.parse(userData.activeCosmetics) : prev.activeCosmetics,
+            }));
+          }
+        } catch (error) {
+          console.error("Failed to sync from database:", error);
+        }
+      }
+    };
+
+    syncFromDatabase();
+  }, [isAuthenticated, user, authLoading]);
+
+  // Auto-sync to database every 30 seconds if authenticated
+  useEffect(() => {
+    if (!isAuthenticated || !user) return;
+
+    const syncInterval = setInterval(async () => {
+      try {
+        await saveGameDataMutation.mutateAsync({
+          coins: state.coins,
+          chips: state.chips,
+          clickCount: state.clickCount,
+          upgrades: JSON.stringify(state.upgrades),
+          activeCosmetics: JSON.stringify(state.activeCosmetics),
+        });
+      } catch (error) {
+        console.error("Failed to save game data:", error);
+      }
+    }, 30000); // Sync every 30 seconds
+
+    return () => clearInterval(syncInterval);
+  }, [isAuthenticated, user, state]);
+
+  // Submit score to leaderboard
   useEffect(() => {
     if (isAuthenticated && user && state.coins > 0) {
-      // Debounce the submission to avoid too many requests
       const timer = setTimeout(() => {
         submitScoreMutation.mutate({ score: state.coins });
-      }, 2000); // Submit 2 seconds after last coin change
-      
+      }, 2000);
+
       return () => clearTimeout(timer);
     }
   }, [state.coins, isAuthenticated, user]);
@@ -181,7 +230,7 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
     if (state.upgrades.moneyMagnet) {
       const interval = setInterval(() => {
         addCoins(50);
-      }, 30000); // Every 30 seconds
+      }, 30000);
       return () => clearInterval(interval);
     }
   }, [state.upgrades.moneyMagnet]);
@@ -211,10 +260,9 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const convertCoinsToChips = (coinAmount: number) => {
-    // 1 chip = $10
     const chipAmount = Math.floor(coinAmount / 10);
     const actualCoinCost = chipAmount * 10;
-    
+
     if (chipAmount <= 0) return false;
     if (removeCoins(actualCoinCost)) {
       addChips(chipAmount);
@@ -224,7 +272,6 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const convertChipsToCoins = (chipAmount: number) => {
-    // 1 chip = $10
     if (removeChips(chipAmount)) {
       addCoins(chipAmount * 10);
       return true;
@@ -234,16 +281,13 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const calculateClickValue = (currentUpgrades: GameState["upgrades"]) => {
     let val = 1;
-    
-    // Base click upgrades (highest tier wins)
+
     if (currentUpgrades.megaClick) val = 10;
     else if (currentUpgrades.tripleClick) val = 3;
     else if (currentUpgrades.doubleClick) val = 2;
 
-    // Click Power II stacks
     val += currentUpgrades.clickPowerII;
 
-    // Multipliers
     if (currentUpgrades.goldenDollar) val *= 2;
     if (currentUpgrades.clickMultiplierX5) val *= 5;
     if (currentUpgrades.diamondClicker) val *= 3;
@@ -262,21 +306,21 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const getAutoClickerInterval = (currentUpgrades: GameState["upgrades"]) => {
-    if (currentUpgrades.hyperClicker) return 3000; // Every 3 seconds
-    if (currentUpgrades.turboMode) return 5000; // Every 5 seconds
-    return 10000; // Every 10 seconds
+    if (currentUpgrades.hyperClicker) return 3000;
+    if (currentUpgrades.turboMode) return 5000;
+    return 10000;
   };
 
   const purchaseUpgrade = (upgradeKey: keyof GameState["upgrades"], cost: number) => {
     if (state.coins >= cost) {
       setState((prev) => {
         const newUpgrades = { ...prev.upgrades };
-        
-        if (upgradeKey === 'clickPowerII') {
-             newUpgrades.clickPowerII += 1;
+
+        if (upgradeKey === "clickPowerII") {
+          newUpgrades.clickPowerII += 1;
         } else {
-             // @ts-ignore
-             newUpgrades[upgradeKey] = true;
+          // @ts-ignore
+          newUpgrades[upgradeKey] = true;
         }
 
         const newClickValue = calculateClickValue(newUpgrades);
@@ -289,7 +333,7 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
           upgrades: newUpgrades,
           clickValue: newClickValue,
           autoClickerValue: newAutoClickerValue,
-          autoClickerInterval: newInterval
+          autoClickerInterval: newInterval,
         };
       });
       return true;
@@ -317,6 +361,22 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const resetGame = () => {
     setState(INITIAL_STATE);
+    localStorage.removeItem("fridgee_casino_save-v2");
+  };
+
+  const syncToDatabase = async () => {
+    if (!isAuthenticated || !user) return;
+    try {
+      await saveGameDataMutation.mutateAsync({
+        coins: state.coins,
+        chips: state.chips,
+        clickCount: state.clickCount,
+        upgrades: JSON.stringify(state.upgrades),
+        activeCosmetics: JSON.stringify(state.activeCosmetics),
+      });
+    } catch (error) {
+      console.error("Failed to sync to database:", error);
+    }
   };
 
   return (
@@ -333,6 +393,7 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
         purchaseUpgrade,
         incrementClickCount,
         resetGame,
+        syncToDatabase,
       }}
     >
       {children}
