@@ -124,7 +124,8 @@ export default function PokerGame() {
 
     setGameStarted(true);
     setPlayerBet(0);
-    setMaxBet(Math.min(100, gameState.coins));
+    setMaxBet(gameState.upgrades.highRoller ? gameState.chips : Math.min(100, gameState.chips));
+
   };
 
   const handleBet = () => {
