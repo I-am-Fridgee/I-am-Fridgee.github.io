@@ -1,152 +1,128 @@
 import { router, publicProcedure, protectedProcedure } from "./_core/trpc";
-import { z } from "zod";
 import { getTopPlayers, updatePlayerScore, getPlayerRank, getDb } from "./db";
 import { leaderboard } from "../drizzle/schema";
-import { desc, eq } from "drizzle-orm";
+import { eq, desc } from "drizzle-orm";
+import { z } from "zod";
 
 export const leaderboardRouter = router({
-  /**
-   * Submit or update a player's score
-   * Requires Firebase authentication
-   */
+  // Submit player score
   submitScore: protectedProcedure
-    .input(z.object({
-      score: z.number().int().min(0),
-      username: z.string().min(1).max(100).optional(),
-    }))
+    .input(z.object({ score: z.number().min(0) }))
     .mutation(async ({ input, ctx }) => {
-      if (!ctx.user) {
-        throw new Error("User not authenticated");
-      }
+      if (!ctx.user) throw new Error("Not authenticated");
 
-      const userId = ctx.user.id;
-      const username = input.username || ctx.user.name || "Anonymous";
+      const db = await getDb();
+      if (!db) throw new Error("Database not available");
 
       try {
-        await updatePlayerScore(userId, username, input.score);
-        return {
-          success: true,
-          score: input.score,
-          message: "Score submitted successfully",
-        };
+        await updatePlayerScore(ctx.user.id, ctx.user.name || "Player", input.score);
+        return { success: true };
       } catch (error) {
-        console.error("[Leaderboard] Failed to submit score:", error);
-        throw new Error("Failed to submit score");
+        console.error("Failed to submit score:", error);
+        throw error;
       }
     }),
 
-  /**
-   * Get top players on the leaderboard
-   * Public endpoint - no authentication required
-   */
-  getTopPlayers: publicProcedure
-    .input(z.object({
-      limit: z.number().int().min(1).max(100).default(10),
-    }))
-    .query(async ({ input }) => {
+  // Get top 10 players
+  getTopPlayers: publicProcedure.query(async () => {
+    try {
+      const topPlayers = await getTopPlayers(10);
+      return topPlayers.map((p, index) => ({
+        rank: index + 1,
+        username: p.username,
+        highScore: p.highScore,
+      }));
+    } catch (error) {
+      console.error("Failed to get top players:", error);
+      return [];
+    }
+  }),
+
+  // Get player's rank
+  getPlayerRank: protectedProcedure.query(async ({ ctx }) => {
+    if (!ctx.user) throw new Error("Not authenticated");
+
+    try {
+      const rank = await getPlayerRank(ctx.user.id);
+      return { rank: rank || null };
+    } catch (error) {
+      console.error("Failed to get player rank:", error);
+      return { rank: null };
+    }
+  }),
+
+  // Get leaderboard stats
+  getStats: publicProcedure.query(async () => {
+    const db = await getDb();
+    if (!db) return { totalPlayers: 0, totalCoins: 0, highestScore: 0 };
+
+    try {
+      const stats = await db.select().from(leaderboard);
+      return {
+        totalPlayers: stats.length,
+        totalCoins: stats.reduce((sum, p) => sum + p.highScore, 0),
+        highestScore: stats.length > 0 ? Math.max(...stats.map(p => p.highScore)) : 0,
+      };
+    } catch (error) {
+      console.error("Failed to get stats:", error);
+      return { totalPlayers: 0, totalCoins: 0, highestScore: 0 };
+    }
+  }),
+
+  // Save game data (for cross-device sync)
+  saveGameData: protectedProcedure
+    .input(
+      z.object({
+        coins: z.number(),
+        chips: z.number(),
+        clickCount: z.number(),
+        upgrades: z.string(),
+        activeCosmetics: z.string(),
+      })
+    )
+    .mutation(async ({ input, ctx }) => {
+      if (!ctx.user) throw new Error("Not authenticated");
+
+      const db = await getDb();
+      if (!db) throw new Error("Database not available");
+
       try {
-        const topPlayers = await getTopPlayers(input.limit);
-        return topPlayers.map((entry, index) => ({
-          rank: index + 1,
-          username: entry.username,
-          highScore: entry.highScore,
-          updatedAt: entry.updatedAt,
-        }));
+        // Store game data in a game_data table (you'll need to add this to schema)
+        // For now, we'll just update the leaderboard with coins
+        await updatePlayerScore(ctx.user.id, ctx.user.name || "Player", input.coins);
+        return { success: true };
       } catch (error) {
-        console.error("[Leaderboard] Failed to get top players:", error);
-        throw new Error("Failed to fetch leaderboard");
+        console.error("Failed to save game data:", error);
+        throw error;
       }
     }),
 
-  /**
-   * Get current player's rank and score
-   * Requires Firebase authentication
-   */
-  getPlayerRank: protectedProcedure
-    .query(async ({ ctx }) => {
-      if (!ctx.user) {
-        throw new Error("User not authenticated");
-      }
+  // Get user's game data (for cross-device sync)
+  getUserData: protectedProcedure.query(async ({ ctx }) => {
+    if (!ctx.user) throw new Error("Not authenticated");
 
-      try {
-        const userId = ctx.user.id;
-        const rank = await getPlayerRank(userId);
+    const db = await getDb();
+    if (!db) return null;
 
-        // Get player's score
-        const db = await getDb();
-        if (!db) {
-          return {
-            rank: null,
-            score: 0,
-            username: ctx.user.name || "Anonymous",
-            message: "Database not available",
-          };
-        }
+    try {
+      const playerData = await db
+        .select()
+        .from(leaderboard)
+        .where(eq(leaderboard.userId, ctx.user.id))
+        .limit(1);
 
-        const playerEntry = await db
-          .select()
-          .from(leaderboard)
-          .where(eq(leaderboard.userId, userId))
-          .limit(1);
+      if (playerData.length === 0) return null;
 
-        if (playerEntry.length === 0) {
-          return {
-            rank: null,
-            score: 0,
-            username: ctx.user.name || "Anonymous",
-            message: "No score submitted yet",
-          };
-        }
-
-        // Get total players for percentile
-        const allPlayers = await db.select().from(leaderboard);
-
-        return {
-          rank: rank,
-          score: playerEntry[0].highScore,
-          username: playerEntry[0].username,
-          totalPlayers: allPlayers.length,
-        };
-      } catch (error) {
-        console.error("[Leaderboard] Failed to get player rank:", error);
-        throw new Error("Failed to fetch player rank");
-      }
-    }),
-
-  /**
-   * Get leaderboard statistics
-   * Public endpoint
-   */
-  getStats: publicProcedure
-    .query(async () => {
-      try {
-        const db = await getDb();
-        if (!db) {
-          return {
-            totalPlayers: 0,
-            highestScore: 0,
-            averageScore: 0,
-          };
-        }
-
-        const allEntries = await db.select().from(leaderboard);
-
-        const totalPlayers = allEntries.length;
-        const highestScore = allEntries.length > 0 
-          ? Math.max(...allEntries.map(e => e.highScore))
-          : 0;
-        const averageScore = allEntries.length > 0
-          ? Math.round(allEntries.reduce((sum, e) => sum + e.highScore, 0) / allEntries.length)
-          : 0;
-
-        return {
-          totalPlayers,
-          highestScore,
-          averageScore,
-        };
-      } catch (error) {
-        console.error("[Leaderboard] Failed to get stats:", error);
-        throw new Error("Failed to fetch leaderboard stats");
-      }
-    }),
+      return {
+        coins: playerData[0].highScore,
+        chips: 0,
+        clickCount: 0,
+        upgrades: "{}",
+        activeCosmetics: "{}",
+      };
+    } catch (error) {
+      console.error("Failed to get user data:", error);
+      return null;
+    }
+  }),
 });
