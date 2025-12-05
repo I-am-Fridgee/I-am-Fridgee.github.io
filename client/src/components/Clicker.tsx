@@ -1,12 +1,24 @@
-import { useGame } from "@/contexts/GameContext";
 import { motion, AnimatePresence } from "framer-motion";
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { cn } from "@/lib/utils";
+import { useGame } from "@/contexts/GameContext";
 
 export default function Clicker() {
   const { state, incrementClickCount } = useGame();
   const [clicks, setClicks] = useState<{ id: number; x: number; y: number; val: number }[]>([]);
+  const [rainbowHue, setRainbowHue] = useState(0);
   const clickerRef = useRef<HTMLButtonElement>(null);
+
+  // Rainbow animation
+  useEffect(() => {
+    if (!state.activeCosmetics.rainbowClicker) return;
+    
+    const interval = setInterval(() => {
+      setRainbowHue((prev) => (prev + 2) % 360);
+    }, 30);
+    
+    return () => clearInterval(interval);
+  }, [state.activeCosmetics.rainbowClicker]);
 
   const handleClick = (e: React.MouseEvent) => {
     incrementClickCount();
@@ -25,9 +37,8 @@ export default function Clicker() {
       }, 1000);
     }
 
-    // Confetti effect if unlocked
-    if (state.upgrades.confettiClick) {
-      // Create random colored particles
+    // Confetti effect if active
+    if (state.activeCosmetics.confettiClick) {
       const colors = ["#FF6B6B", "#4ECDC4", "#FFE66D", "#A8E6CF", "#FF8B94"];
       for (let i = 0; i < 8; i++) {
         const particle = document.createElement("div");
@@ -53,7 +64,7 @@ export default function Clicker() {
 
         const animate = () => {
           x += vx * 0.016;
-          y += vy * 0.016 + 2; // gravity
+          y += vy * 0.016 + 2;
           opacity -= 0.02;
 
           particle.style.left = `${x}px`;
@@ -64,6 +75,50 @@ export default function Clicker() {
             requestAnimationFrame(animate);
           } else {
             document.body.removeChild(particle);
+          }
+        };
+        requestAnimationFrame(animate);
+      }
+    }
+
+    // Fireworks effect on big wins (>$100)
+    if (state.activeCosmetics.fireworksEffect && state.clickValue > 100) {
+      for (let i = 0; i < 12; i++) {
+        const firework = document.createElement("div");
+        firework.style.position = "fixed";
+        firework.style.left = `${e.clientX}px`;
+        firework.style.top = `${e.clientY}px`;
+        firework.style.width = "6px";
+        firework.style.height = "6px";
+        firework.style.borderRadius = "50%";
+        firework.style.backgroundColor = `hsl(${Math.random() * 360}, 100%, 50%)`;
+        firework.style.pointerEvents = "none";
+        firework.style.zIndex = "9999";
+        firework.style.boxShadow = `0 0 10px currentColor`;
+        document.body.appendChild(firework);
+
+        const angle = (Math.PI * 2 * i) / 12;
+        const velocity = 100 + Math.random() * 100;
+        const vx = Math.cos(angle) * velocity;
+        const vy = Math.sin(angle) * velocity;
+
+        let x = e.clientX;
+        let y = e.clientY;
+        let opacity = 1;
+
+        const animate = () => {
+          x += vx * 0.016;
+          y += vy * 0.016 + 3;
+          opacity -= 0.015;
+
+          firework.style.left = `${x}px`;
+          firework.style.top = `${y}px`;
+          firework.style.opacity = `${opacity}`;
+
+          if (opacity > 0) {
+            requestAnimationFrame(animate);
+          } else {
+            document.body.removeChild(firework);
           }
         };
         requestAnimationFrame(animate);
@@ -87,49 +142,59 @@ export default function Clicker() {
         onClick={handleClick}
         className="relative group cursor-pointer outline-none"
       >
-        {/* Glow effect */}
-        <div className={cn(
-          "absolute inset-0 rounded-full blur-3xl transition-all duration-500",
-          state.upgrades.neonGlow 
-            ? "bg-cyan-500/40 group-hover:bg-cyan-400/60 animate-pulse" 
-            : "bg-amber-500/20 group-hover:bg-amber-500/30"
-        )} />
-        
-        {/* Coin Image */}
-        <img 
-          src="/images/gold_coin_clicker.png" 
-          alt="Click to earn" 
-          className="w-64 h-64 object-contain relative z-10 drop-shadow-2xl"
-        />
-        
-        {/* Ripple/Ring animation on click could be added here */}
-      </motion.button>
+        {/* Rainbow Clicker Border */}
+        {state.activeCosmetics.rainbowClicker && (
+          <div
+            className="absolute inset-0 rounded-full blur-2xl opacity-60 group-hover:opacity-100 transition-opacity"
+            style={{
+              background: `conic-gradient(from ${rainbowHue}deg, red, yellow, lime, cyan, blue, magenta, red)`,
+              width: "280px",
+              height: "280px",
+              left: "-20px",
+              top: "-20px",
+            }}
+          />
+        )}
 
-      {/* Floating Numbers */}
-      <div className="absolute inset-0 pointer-events-none overflow-hidden">
+        {/* Golden Frame */}
+        {state.activeCosmetics.goldenFrame && (
+          <div className="absolute inset-0 rounded-full border-4 border-yellow-400 blur-sm opacity-70 pointer-events-none" style={{ width: "240px", height: "240px", left: "-10px", top: "-10px" }} />
+        )}
+
+        {/* Glow effect */}
+        <div
+          className={cn(
+            "absolute inset-0 rounded-full blur-3xl transition-all duration-500",
+            state.activeCosmetics.neonGlow
+              ? "bg-cyan-500/40 group-hover:bg-cyan-400/60 animate-pulse"
+              : "bg-amber-500/20 group-hover:bg-amber-500/30"
+          )}
+        />
+
+        {/* Coin Image */}
+        <img
+          src="/images/gold_coin_clicker.png"
+          alt="Click me!"
+          className="relative w-64 h-64 object-contain drop-shadow-2xl"
+        />
+
+        {/* Floating clicks */}
         <AnimatePresence>
           {clicks.map((click) => (
             <motion.div
               key={click.id}
-              initial={{ opacity: 1, y: click.y + 100, x: click.x + 100 }} // Offset to center relative to container
-              animate={{ opacity: 0, y: click.y - 100 }}
+              initial={{ opacity: 1, y: 0 }}
+              animate={{ opacity: 0, y: -50 }}
               exit={{ opacity: 0 }}
-              transition={{ duration: 0.8, ease: "easeOut" }}
-              className="absolute text-2xl font-bold text-green-400 font-display drop-shadow-md"
-              style={{ left: 0, top: 0 }} // Positioning handled by motion initial/animate
+              transition={{ duration: 1 }}
+              className="absolute pointer-events-none font-bold text-lg text-amber-300"
+              style={{ left: click.x, top: click.y }}
             >
-              +${click.val}
+              +${click.val.toLocaleString()}
             </motion.div>
           ))}
         </AnimatePresence>
-      </div>
-
-      <div className="mt-8 text-center space-y-1">
-        <p className="text-amber-100/50 text-xs">Click Power: ${state.clickValue}</p>
-        {state.autoClickerValue > 0 && (
-          <p className="text-amber-100/50 text-xs">Auto: ${state.autoClickerValue} / 10s</p>
-        )}
-      </div>
+      </motion.button>
     </div>
   );
 }
