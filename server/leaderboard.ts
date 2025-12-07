@@ -1,6 +1,6 @@
 import { router, publicProcedure, protectedProcedure } from "./_core/trpc";
 import { getTopPlayers, updatePlayerScore, getPlayerRank, getDb } from "../db";
-import { leaderboard } from "../../drizzle/schema";
+import { leaderboard } from "main/drizzle/schema";
 import { eq, desc } from "drizzle-orm";
 import { z } from "zod";
 
