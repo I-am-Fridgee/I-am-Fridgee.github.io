@@ -80,13 +80,10 @@ export default function PokerGame() {
       return;
     }
 
-    if (gameState.chips < 1000) {
-      toast.error("You need at least 1,000 chips to play!");
+    if (gameState.chips < 100) {
+      toast.error("You need at least 100 chips to play!");
       return;
     }
-
-    // Deduct entry chips
-    removeChips(1000);
 
     const deck = createDeck();
     let remainingDeck = [...deck];
@@ -150,16 +147,18 @@ export default function PokerGame() {
       player.hasActed = true;
       player.lastAction = "Folded";
       setGameMessage("You folded!");
-      removeChips(player.bet);
       
       setTimeout(() => {
         endRound(gameData);
       }, 1000);
       return;
     } else if (action === "call") {
-      const callAmount = Math.min(gameData.currentBet - player.bet, player.chips);
+      const callAmount = Math.min(gameData.currentBet - player.bet, gameState.chips);
+      if (callAmount > gameState.chips) {
+        toast.error("Not enough chips!");
+        return;
+      }
       player.bet += callAmount;
-      player.chips -= callAmount;
       gameData.pot += callAmount;
       player.hasActed = true;
       player.lastAction = `Called $${callAmount}`;
@@ -171,8 +170,11 @@ export default function PokerGame() {
         return;
       }
       const raiseAmount = playerBet - player.bet;
+      if (raiseAmount > gameState.chips) {
+        toast.error("Not enough chips to raise that amount!");
+        return;
+      }
       player.bet = playerBet;
-      player.chips -= raiseAmount;
       gameData.pot += raiseAmount;
       gameData.currentBet = playerBet;
       player.hasActed = true;
@@ -211,7 +213,7 @@ export default function PokerGame() {
             bot.chips -= bluffAmount;
             game.pot += bluffAmount;
             game.currentBet = Math.max(game.currentBet, bot.bet);
-            bot.lastAction = `Raised to $${bot.bet} (Bluff!)`;
+            bot.lastAction = `Raised to $${bot.bet}`;
             setGameMessage(`${bot.name} raised to $${bot.bet}!`);
           } else if (strength < 3 && rand < 0.7) {
             bot.folded = true;
@@ -321,7 +323,7 @@ export default function PokerGame() {
       <Card className="bg-black/40 border-amber-500/30 backdrop-blur-md">
         <CardHeader className="border-b border-amber-500/20 pb-4">
           <CardTitle className="text-2xl font-display text-amber-200">♠️ Texas Hold'em Poker</CardTitle>
-          <CardDescription className="text-amber-200/50">Entry: 1,000 chips • VIP Exclusive</CardDescription>
+          <CardDescription className="text-amber-200/50">Minimum: 100 chips • VIP Exclusive</CardDescription>
         </CardHeader>
         <CardContent className="p-6 space-y-6">
           <div className="bg-amber-900/20 border border-amber-500/30 p-4 rounded-lg">
@@ -358,10 +360,10 @@ export default function PokerGame() {
 
           <Button
             onClick={startGame}
-            disabled={gameState.chips < 1000}
+            disabled={gameState.chips < 100}
             className="w-full bg-amber-600 hover:bg-amber-700 text-white font-bold py-4 text-lg"
           >
-            {gameState.chips < 1000 ? "Not Enough Chips" : "Start Game - 1,000 chips"}
+            {gameState.chips < 100 ? "Not Enough Chips" : "Start Game"}
           </Button>
         </CardContent>
       </Card>
@@ -463,7 +465,7 @@ export default function PokerGame() {
               <div className="flex justify-between items-center mb-3">
                 <div>
                   <p className="text-amber-100 font-bold text-lg">You</p>
-                  <p className="text-amber-200/70">Chips: ${gameData.players[0].chips}</p>
+                  <p className="text-amber-200/70">Chips: ${gameState.chips.toLocaleString()}</p>
                   <p className="text-amber-200/70">Bet: ${gameData.players[0].bet}</p>
                 </div>
                 <div className="flex gap-2">
