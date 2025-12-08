@@ -17,6 +17,7 @@ export default function BlackjackGame() {
   const [dealerHand, setDealerHand] = useState<Card[]>([]);
   const [gameState, setGameState] = useState<"idle" | "playing" | "finished">("idle");
   const [message, setMessage] = useState("");
+  const [animateNewCard, setAnimateNewCard] = useState(false);
 
   const getDeck = () => {
     const deck: Card[] = [];
@@ -60,39 +61,62 @@ export default function BlackjackGame() {
       setGameState("playing");
       setMessage("");
       
-      // Deal cards with animation delay
+      // Deal initial cards with animation
+      const pHand = [newDeck.pop()!, newDeck.pop()!];
+      const dHand = [newDeck.pop()!, newDeck.pop()!];
+      setPlayerHand(pHand);
+      setDealerHand(dHand);
+      setAnimateNewCard(true);
+      
+      // Check instant Blackjack
       setTimeout(() => {
-        const pHand = [newDeck.pop()!, newDeck.pop()!];
-        const dHand = [newDeck.pop()!, newDeck.pop()!];
-        setPlayerHand(pHand);
-        setDealerHand(dHand);
-        
-        // Check instant Blackjack
+        setAnimateNewCard(false);
         if (calculateScore(pHand) === 21) {
           setTimeout(() => endGame(pHand, dHand, betAmount * 2.5), 500);
         }
-      }, 100);
+      }, 800);
     }
   };
 
   const hit = () => {
+    setAnimateNewCard(true);
     const newHand = [...playerHand, deck.pop()!];
     setPlayerHand(newHand);
-    if (calculateScore(newHand) > 21) {
-      endGame(newHand, dealerHand, 0);
-    }
+    
+    setTimeout(() => {
+      setAnimateNewCard(false);
+      if (calculateScore(newHand) > 21) {
+        endGame(newHand, dealerHand, 0);
+      }
+    }, 400);
   };
 
   const stand = () => {
     let currentDealerHand = [...dealerHand];
     let currentDeck = [...deck];
     
+    const playerScore = calculateScore(playerHand);
+    const dealerScore = calculateScore(currentDealerHand);
+    
+    // Improved dealer logic: if already winning, don't risk
+    if (dealerScore > playerScore && dealerScore <= 21) {
+      // Dealer already winning, no need to hit
+      const betAmount = parseInt(bet);
+      endGame(playerHand, currentDealerHand, 0);
+      return;
+    }
+    
     // Dealer plays by standard rules: hit on 16 or less, stand on 17+
     const dealerDrawCards = () => {
       if (calculateScore(currentDealerHand) < 17) {
+        setAnimateNewCard(true);
         currentDealerHand.push(currentDeck.pop()!);
         setDealerHand([...currentDealerHand]);
-        setTimeout(dealerDrawCards, 600); // Animate each card
+        
+        setTimeout(() => {
+          setAnimateNewCard(false);
+          setTimeout(dealerDrawCards, 200);
+        }, 400);
       } else {
         // Dealer done
         setDeck(currentDeck);
@@ -136,11 +160,11 @@ export default function BlackjackGame() {
     }
   };
 
-  const CardView = ({ card, hidden, index }: { card: Card; hidden?: boolean; index: number }) => (
+  const CardView = ({ card, hidden, shouldAnimate }: { card: Card; hidden?: boolean; shouldAnimate?: boolean }) => (
     <motion.div 
-      initial={{ x: -100, y: -50, opacity: 0, rotate: -20 }}
-      animate={{ x: 0, y: 0, opacity: 1, rotate: 0 }}
-      transition={{ delay: index * 0.2, type: "spring", stiffness: 200 }}
+      initial={shouldAnimate ? { x: -100, y: -50, opacity: 0, rotate: -20 } : false}
+      animate={shouldAnimate ? { x: 0, y: 0, opacity: 1, rotate: 0 } : {}}
+      transition={{ type: "spring", stiffness: 200, damping: 15 }}
       className={`
         w-16 h-24 rounded-lg flex items-center justify-center text-xl font-bold border-2 shadow-md
         ${hidden 
@@ -171,18 +195,20 @@ export default function BlackjackGame() {
       <div className="relative z-10">
         <div className="flex justify-between items-start mb-8">
           <h3 className="text-2xl font-display font-bold text-amber-100 drop-shadow-md">Blackjack</h3>
-
         </div>
 
         {/* Dealer Area */}
         <div className="flex flex-col items-center mb-8 min-h-[120px]">
           <div className="text-xs uppercase tracking-widest text-emerald-200/50 mb-2">Dealer</div>
           <div className="flex gap-2">
-            <AnimatePresence>
-              {dealerHand.map((card, i) => (
-                <CardView key={i} card={card} hidden={gameState === "playing" && i === 1} index={i} />
-              ))}
-            </AnimatePresence>
+            {dealerHand.map((card, i) => (
+              <CardView 
+                key={`dealer-${i}`} 
+                card={card} 
+                hidden={gameState === "playing" && i === 1} 
+                shouldAnimate={animateNewCard && i === dealerHand.length - 1}
+              />
+            ))}
             {dealerHand.length === 0 && <div className="w-16 h-24 border-2 border-dashed border-white/20 rounded-lg" />}
           </div>
           {gameState === "finished" && (
@@ -194,11 +220,13 @@ export default function BlackjackGame() {
         <div className="flex flex-col items-center mb-8 min-h-[120px]">
           <div className="text-xs uppercase tracking-widest text-emerald-200/50 mb-2">You</div>
           <div className="flex gap-2">
-            <AnimatePresence>
-              {playerHand.map((card, i) => (
-                <CardView key={i} card={card} index={i} />
-              ))}
-            </AnimatePresence>
+            {playerHand.map((card, i) => (
+              <CardView 
+                key={`player-${i}`} 
+                card={card} 
+                shouldAnimate={animateNewCard && i === playerHand.length - 1}
+              />
+            ))}
             {playerHand.length === 0 && <div className="w-16 h-24 border-2 border-dashed border-white/20 rounded-lg" />}
           </div>
           {playerHand.length > 0 && (
