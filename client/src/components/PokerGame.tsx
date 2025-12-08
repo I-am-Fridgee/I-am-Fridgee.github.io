@@ -5,7 +5,7 @@ import { useGame } from "@/contexts/GameContext";
 import { toast } from "sonner";
 import { Slider } from "@/components/ui/slider";
 
-interface Card {
+interface PokerCard {
   suit: "♠" | "♥" | "♦" | "♣";
   rank: string;
 }
@@ -14,40 +14,30 @@ interface Player {
   id: number;
   name: string;
   chips: number;
-  hand: Card[];
+  hand: PokerCard[];
   bet: number;
   folded: boolean;
   isBot: boolean;
   isDealer: boolean;
+  hasActed: boolean;
 }
 
 interface GameState {
   players: Player[];
-  communityCards: Card[];
+  communityCards: PokerCard[];
   pot: number;
   currentPlayer: number;
   gamePhase: "betting" | "flop" | "turn" | "river" | "showdown" | "ended";
   round: number;
+  minBet: number;
+  currentBet: number;
 }
-
-const HAND_RANKINGS = [
-  { name: "High Card", description: "Highest card in hand" },
-  { name: "One Pair", description: "Two cards of same rank" },
-  { name: "Two Pair", description: "Two different pairs" },
-  { name: "Three of a Kind", description: "Three cards of same rank" },
-  { name: "Straight", description: "Five cards in sequence" },
-  { name: "Flush", description: "Five cards of same suit" },
-  { name: "Full House", description: "Three of a kind + pair" },
-  { name: "Four of a Kind", description: "Four cards of same rank" },
-  { name: "Straight Flush", description: "Straight + flush" },
-  { name: "Royal Flush", description: "A-K-Q-J-10 of same suit" },
-];
 
 const SUITS: ("♠" | "♥" | "♦" | "♣")[] = ["♠", "♥", "♦", "♣"];
 const RANKS = ["2", "3", "4", "5", "6", "7", "8", "9", "10", "J", "Q", "K", "A"];
 
-const createDeck = (): Card[] => {
-  const deck: Card[] = [];
+const createDeck = (): PokerCard[] => {
+  const deck: PokerCard[] = [];
   for (const suit of SUITS) {
     for (const rank of RANKS) {
       deck.push({ suit, rank });
@@ -56,8 +46,24 @@ const createDeck = (): Card[] => {
   return deck.sort(() => Math.random() - 0.5);
 };
 
-const dealCards = (deck: Card[], count: number): [Card[], Card[]] => {
+const dealCards = (deck: PokerCard[], count: number): [PokerCard[], PokerCard[]] => {
   return [deck.slice(0, count), deck.slice(count)];
+};
+
+const getHandStrength = (cards: PokerCard[]): number => {
+  // Simple hand strength calculation (0-10)
+  // In real poker, this would be much more complex
+  const ranks = cards.map(c => RANKS.indexOf(c.rank));
+  const suits = cards.map(c => c.suit);
+  
+  const hasFlush = suits.filter(s => suits.indexOf(s) !== suits.lastIndexOf(s)).length > 0;
+  const hasPair = ranks.filter(r => ranks.indexOf(r) !== ranks.lastIndexOf(r)).length > 0;
+  
+  let strength = Math.max(...ranks) / 12;
+  if (hasPair) strength += 3;
+  if (hasFlush) strength += 2;
+  
+  return Math.min(strength, 10);
 };
 
 export default function PokerGame() {
@@ -67,19 +73,17 @@ export default function PokerGame() {
   const [playerBet, setPlayerBet] = useState(0);
   const [maxBet, setMaxBet] = useState(100);
   const [gameData, setGameData] = useState<GameState | null>(null);
-  const [selectedAction, setSelectedAction] = useState<"call" | "raise" | "fold" | null>(null);
+  const [gameMessage, setGameMessage] = useState("");
+  const [waitingForBot, setWaitingForBot] = useState(false);
 
-  // Check if player can afford to play
-  const canPlay = gameState.coins >= 50000;
+  // Check if player has VIP status
+  const hasVIP = gameState.upgrades.vipStatus;
 
   const startGame = () => {
-    if (!canPlay) {
-      toast.error("You need 50,000 coins to play Poker!");
+    if (!hasVIP) {
+      toast.error("You need VIP Status to play Poker!");
       return;
     }
-
-    // Deduct entry fee
-    removeCoins(50000);
 
     // Initialize game
     const deck = createDeck();
@@ -95,6 +99,7 @@ export default function PokerGame() {
         folded: false,
         isBot: false,
         isDealer: false,
+        hasActed: false,
       },
     ];
 
@@ -110,6 +115,7 @@ export default function PokerGame() {
         folded: false,
         isBot: true,
         isDealer: i === botCount - 1,
+        hasActed: false,
       });
     }
 
@@ -120,53 +126,121 @@ export default function PokerGame() {
       currentPlayer: 0,
       gamePhase: "betting",
       round: 1,
+      minBet: 10,
+      currentBet: 0,
     });
 
     setGameStarted(true);
     setPlayerBet(0);
     setMaxBet(gameState.upgrades.highRoller ? gameState.chips : Math.min(100, gameState.chips));
-
+    setGameMessage("Place your bet!");
   };
 
-  const handleBet = () => {
-    if (!gameData || playerBet <= 0 || playerBet > maxBet) {
-      toast.error("Invalid bet amount");
-      return;
-    }
-
-    removeCoins(playerBet);
-    setPlayerBet(0);
-    toast.success(`Bet $${playerBet}`);
-  };
-
-  const handleAction = (action: "call" | "raise" | "fold") => {
+  const handlePlayerAction = (action: "fold" | "call" | "raise") => {
     if (!gameData) return;
 
+    const player = gameData.players[0];
+    let newBet = playerBet;
+
     if (action === "fold") {
-      toast.info("You folded");
-      setGameStarted(false);
-      addCoins(gameData.pot / 2); // Get back half the pot
+      setGameMessage("You folded!");
+      gameData.players[0].folded = true;
+      gameData.players[0].hasActed = true;
     } else if (action === "call") {
-      toast.info("You called");
+      newBet = Math.min(gameData.currentBet - player.bet, player.chips);
+      gameData.players[0].bet += newBet;
+      gameData.players[0].chips -= newBet;
+      gameData.pot += newBet;
+      gameData.players[0].hasActed = true;
+      setGameMessage(`You called $${newBet}`);
     } else if (action === "raise") {
-      toast.info("You raised");
+      if (playerBet <= gameData.currentBet) {
+        toast.error("Raise must be higher than current bet!");
+        return;
+      }
+      const raiseAmount = playerBet - player.bet;
+      gameData.players[0].bet = playerBet;
+      gameData.players[0].chips -= raiseAmount;
+      gameData.pot += raiseAmount;
+      gameData.currentBet = playerBet;
+      gameData.players[0].hasActed = true;
+      setGameMessage(`You raised to $${playerBet}`);
     }
 
-    setSelectedAction(action);
+    setPlayerBet(0);
+    simulateBotActions(gameData);
   };
 
-  const endGame = () => {
-    setGameStarted(false);
-    setGameData(null);
-    setSelectedAction(null);
+  const simulateBotActions = (game: GameState) => {
+    setWaitingForBot(true);
+    setTimeout(() => {
+      game.players.forEach((bot) => {
+        if (bot.isBot && !bot.folded && !bot.hasActed) {
+          const strength = getHandStrength(bot.hand);
+          const rand = Math.random();
+
+          if (strength < 3 && rand < 0.6) {
+            bot.folded = true;
+            setGameMessage(`${bot.name} folded`);
+          } else if (strength < 5 && rand < 0.4) {
+            const callAmount = Math.min(game.currentBet - bot.bet, bot.chips);
+            bot.bet += callAmount;
+            bot.chips -= callAmount;
+            game.pot += callAmount;
+            setGameMessage(`${bot.name} called`);
+          } else {
+            const raiseAmount = Math.min(Math.floor(Math.random() * 50) + 20, bot.chips);
+            bot.bet += raiseAmount;
+            bot.chips -= raiseAmount;
+            game.pot += raiseAmount;
+            game.currentBet = bot.bet;
+            setGameMessage(`${bot.name} raised to $${bot.bet}`);
+          }
+          bot.hasActed = true;
+        }
+      });
+
+      // Move to next phase if all players have acted
+      const activePlayers = game.players.filter(p => !p.folded);
+      if (activePlayers.length === 1) {
+        endRound(game);
+      } else if (game.gamePhase === "betting") {
+        game.gamePhase = "flop";
+        const [flop, newDeck] = dealCards(createDeck(), 3);
+        game.communityCards = flop;
+        game.players.forEach(p => p.hasActed = false);
+        setGameMessage("Flop revealed!");
+      }
+
+      setGameData({ ...game });
+      setWaitingForBot(false);
+    }, 1500);
   };
 
-  if (!canPlay && !gameStarted) {
+  const endRound = (game: GameState) => {
+    const activePlayers = game.players.filter(p => !p.folded);
+    if (activePlayers.length === 1) {
+      activePlayers[0].chips += game.pot;
+      setGameMessage(`${activePlayers[0].name} wins $${game.pot}!`);
+      
+      if (activePlayers[0].id === 0) {
+        addCoins(game.pot);
+      }
+    }
+    
+    setTimeout(() => {
+      setGameStarted(false);
+      setGameData(null);
+      setGameMessage("");
+    }, 2000);
+  };
+
+  if (!hasVIP && !gameStarted) {
     return (
-      <Card className="bg-black/40 border-amber-500/30 backdrop-blur-md">
+      <Card className="bg-black/40 border-red-500/30 backdrop-blur-md">
         <CardContent className="p-6 text-center">
-          <p className="text-amber-200 mb-4">You need 50,000 coins to play Poker!</p>
-          <p className="text-amber-200/60 text-sm">Current coins: ${gameState.coins.toLocaleString()}</p>
+          <p className="text-red-200 mb-4">🔒 VIP Status Required</p>
+          <p className="text-amber-200/60 text-sm">Purchase VIP Status to unlock Poker!</p>
         </CardContent>
       </Card>
     );
@@ -177,7 +251,7 @@ export default function PokerGame() {
       <Card className="bg-black/40 border-amber-500/30 backdrop-blur-md">
         <CardHeader className="border-b border-amber-500/20 pb-4">
           <CardTitle className="text-2xl font-display text-amber-200">♠️ Texas Hold'em Poker</CardTitle>
-          <CardDescription className="text-amber-200/50">Entry fee: 50,000 coins</CardDescription>
+          <CardDescription className="text-amber-200/50">VIP Exclusive Game</CardDescription>
         </CardHeader>
         <CardContent className="p-6 space-y-6">
           <div>
@@ -190,26 +264,25 @@ export default function PokerGame() {
               step={1}
               className="w-full"
             />
-            <p className="text-amber-200/60 text-sm mt-2">Max 3 bots + 1 player</p>
+            <p className="text-amber-200/60 text-sm mt-2">Play against 1-3 bots</p>
           </div>
 
           <div className="bg-amber-900/20 border border-amber-500/30 p-4 rounded-lg">
-            <h3 className="text-amber-100 font-semibold mb-3">Hand Rankings (No Odds Shown)</h3>
-            <div className="grid grid-cols-2 gap-2 text-sm">
-              {HAND_RANKINGS.map((hand, idx) => (
-                <div key={idx} className="text-amber-200/70">
-                  <p className="font-semibold">{hand.name}</p>
-                  <p className="text-xs text-amber-200/50">{hand.description}</p>
-                </div>
-              ))}
-            </div>
+            <h3 className="text-amber-100 font-semibold mb-3">Game Rules</h3>
+            <ul className="text-amber-200/70 text-sm space-y-1">
+              <li>• Each player starts with 1,000 chips</li>
+              <li>• Bots play randomly based on hand strength</li>
+              <li>• Fold, Call, or Raise your way to victory</li>
+              <li>• Winner takes the pot</li>
+              <li>• Betting limit: 100 chips (or unlimited with High Roller)</li>
+            </ul>
           </div>
 
           <Button
             onClick={startGame}
             className="w-full bg-amber-600 hover:bg-amber-700 text-white font-bold py-3"
           >
-            Start Game - 50,000 coins
+            Start Game
           </Button>
         </CardContent>
       </Card>
@@ -223,15 +296,22 @@ export default function PokerGame() {
         <CardDescription className="text-amber-200/50">Pot: ${gameData?.pot || 0}</CardDescription>
       </CardHeader>
       <CardContent className="p-6 space-y-6">
+        {/* Game Message */}
+        {gameMessage && (
+          <div className="bg-amber-900/30 border border-amber-500/30 p-3 rounded text-amber-100 text-center">
+            {gameMessage}
+          </div>
+        )}
+
         {/* Community Cards */}
         {gameData && gameData.communityCards.length > 0 && (
           <div>
-            <p className="text-amber-100 mb-2">Community Cards:</p>
-            <div className="flex gap-2">
+            <p className="text-amber-100 mb-2 font-semibold">Community Cards:</p>
+            <div className="flex gap-2 flex-wrap">
               {gameData.communityCards.map((card, idx) => (
                 <div
                   key={idx}
-                  className="w-16 h-24 bg-white rounded border-2 border-amber-500 flex items-center justify-center text-2xl font-bold"
+                  className="w-16 h-24 bg-white rounded border-2 border-amber-500 flex items-center justify-center text-xl font-bold"
                 >
                   {card.rank}
                   {card.suit}
@@ -244,12 +324,12 @@ export default function PokerGame() {
         {/* Your Hand */}
         {gameData && (
           <div>
-            <p className="text-amber-100 mb-2">Your Hand:</p>
+            <p className="text-amber-100 mb-2 font-semibold">Your Hand:</p>
             <div className="flex gap-2">
               {gameData.players[0].hand.map((card, idx) => (
                 <div
                   key={idx}
-                  className="w-16 h-24 bg-gradient-to-br from-amber-300 to-amber-600 rounded border-2 border-amber-700 flex items-center justify-center text-2xl font-bold text-white"
+                  className="w-16 h-24 bg-gradient-to-br from-amber-300 to-amber-600 rounded border-2 border-amber-700 flex items-center justify-center text-xl font-bold text-white"
                 >
                   {card.rank}
                   {card.suit}
@@ -259,8 +339,22 @@ export default function PokerGame() {
           </div>
         )}
 
+        {/* Players Status */}
+        {gameData && (
+          <div className="bg-amber-900/20 border border-amber-500/30 p-3 rounded">
+            <p className="text-amber-100 font-semibold mb-2">Players:</p>
+            <div className="space-y-1 text-sm">
+              {gameData.players.map((p) => (
+                <div key={p.id} className="text-amber-200/70">
+                  {p.name}: {p.chips} chips {p.folded && "(folded)"}
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
         {/* Betting */}
-        {!selectedAction && (
+        {!waitingForBot && gameData && !gameData.players[0].folded && (
           <div className="space-y-4">
             <div>
               <label className="text-amber-100 block mb-2">Your Bet: ${playerBet}</label>
@@ -276,19 +370,19 @@ export default function PokerGame() {
 
             <div className="grid grid-cols-3 gap-2">
               <Button
-                onClick={() => handleAction("fold")}
+                onClick={() => handlePlayerAction("fold")}
                 className="bg-red-600 hover:bg-red-700"
               >
                 Fold
               </Button>
               <Button
-                onClick={handleBet}
+                onClick={() => handlePlayerAction("call")}
                 className="bg-amber-600 hover:bg-amber-700"
               >
-                Call/Check
+                Call
               </Button>
               <Button
-                onClick={() => handleAction("raise")}
+                onClick={() => handlePlayerAction("raise")}
                 className="bg-green-600 hover:bg-green-700"
               >
                 Raise
@@ -297,15 +391,9 @@ export default function PokerGame() {
           </div>
         )}
 
-        {selectedAction && (
+        {waitingForBot && (
           <div className="text-center py-4">
-            <p className="text-amber-100 mb-4">Waiting for other players...</p>
-            <Button
-              onClick={endGame}
-              className="bg-amber-600 hover:bg-amber-700"
-            >
-              End Game
-            </Button>
+            <p className="text-amber-100">Bots are playing...</p>
           </div>
         )}
       </CardContent>
