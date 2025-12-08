@@ -5,6 +5,7 @@ import SlotMachine from "@/components/SlotMachine";
 import DiceGame from "@/components/DiceGame";
 import BlackjackGame from "@/components/BlackjackGame";
 import RouletteGame from "@/components/RouletteGame";
+import PokerGame from "@/components/PokerGame";
 import ChipExchange from "@/components/ChipExchange";
 import Leaderboard from "@/components/Leaderboard";
 import Settings from "@/components/Settings";
@@ -43,8 +44,8 @@ function GameDashboard() {
 
               <ChipExchange />
 
-              <Tabs defaultValue={state.upgrades.diceGame ? "dice" : state.upgrades.blackjackGame ? "blackjack" : "roulette"} className="w-full">
-                <TabsList className="grid w-full grid-cols-3 bg-black/60 border border-amber-500/20">
+              <Tabs defaultValue={state.upgrades.diceGame ? "dice" : state.upgrades.blackjackGame ? "blackjack" : state.upgrades.rouletteGame ? "roulette" : "poker"} className="w-full">
+                <TabsList className="grid w-full grid-cols-4 bg-black/60 border border-amber-500/20">
                   <TabsTrigger 
                     value="dice" 
                     disabled={!state.upgrades.diceGame}
@@ -66,6 +67,13 @@ function GameDashboard() {
                   >
                     Roulette {state.upgrades.rouletteGame ? "" : "🔒"}
                   </TabsTrigger>
+                  <TabsTrigger 
+                    value="poker" 
+                    disabled={!state.upgrades.vipStatus}
+                    className="data-[state=active]:bg-purple-700 data-[state=active]:text-white"
+                  >
+                    Poker {state.upgrades.vipStatus ? "" : "🔒"}
+                  </TabsTrigger>
                 </TabsList>
                 <TabsContent value="dice" className="mt-4">
                   <DiceGame />
@@ -75,6 +83,9 @@ function GameDashboard() {
                 </TabsContent>
                 <TabsContent value="roulette" className="mt-4">
                   <RouletteGame />
+                </TabsContent>
+                <TabsContent value="poker" className="mt-4">
+                  <PokerGame />
                 </TabsContent>
               </Tabs>
             </div>
