@@ -79,7 +79,7 @@ export default function BlackjackGame() {
       setTimeout(() => {
         setAnimateNewCard(false);
         if (calculateScore(pHand) === 21) {
-          setTimeout(() => endGame(pHand, dHand, betAmount * 2.5), 500);
+          setTimeout(() => endGame(pHand, dHand, betAmount * 3), 500);
         }
       }, 800);
     }
