@@ -16,7 +16,7 @@ export const users = pgTable("users", {
   name: text("name"),
   email: varchar("email", { length: 320 }),
   loginMethod: varchar("loginMethod", { length: 64 }),
-  role: varchar("role", { length: 20 }).notNull().default("user"),
+  role: varchar("role", { length: 20 }).notNull().default("user").$type<"user"|"admin"|"moderator">(), // CHANGED HERE
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().notNull(),
   lastSignedIn: timestamp("lastSignedIn").defaultNow().notNull(),
@@ -39,3 +39,19 @@ export const leaderboard = pgTable("leaderboard", {
 export type Leaderboard = typeof leaderboard.$inferSelect;
 export type InsertLeaderboard = typeof leaderboard.$inferInsert;
 
+/**
+ * Game data table for cross-device sync
+ */
+export const gameData = pgTable("game_data", {
+  id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
+  userId: integer("userId").notNull().references(() => users.id).unique(),
+  coins: integer("coins").notNull().default(0),
+  chips: integer("chips").notNull().default(0),
+  clickCount: integer("clickCount").notNull().default(0),
+  upgrades: text("upgrades").notNull().default("{}"),
+  activeCosmetics: text("activeCosmetics").notNull().default("{}"),
+  lastSynced: timestamp("lastSynced").defaultNow().notNull(),
+});
+
+export type GameData = typeof gameData.$inferSelect;
+export type InsertGameData = typeof gameData.$inferInsert;
