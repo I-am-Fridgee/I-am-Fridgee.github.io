@@ -38,3 +38,28 @@ export const leaderboard = pgTable("leaderboard", {
 
 export type Leaderboard = typeof leaderboard.$inferSelect;
 export type InsertLeaderboard = typeof leaderboard.$inferInsert;
+
+import { jsonb } from "drizzle-orm/pg-core";
+
+/**
+ * Persistent game save data (cross-device sync)
+ * One row per user.
+ */
+export const gameData = pgTable("game_data", {
+  userId: integer("userId")
+    .primaryKey()
+    .references(() => users.id),
+
+  coins: integer("coins").notNull().default(0),
+  chips: integer("chips").notNull().default(0),
+  clickCount: integer("clickCount").notNull().default(0),
+
+  upgrades: jsonb("upgrades").notNull().default({}),
+  activeCosmetics: jsonb("activeCosmetics").notNull().default({}),
+
+  updatedAt: timestamp("updatedAt").defaultNow().notNull(),
+});
+
+export type GameData = typeof gameData.$inferSelect;
+export type InsertGameData = typeof gameData.$inferInsert;
+
