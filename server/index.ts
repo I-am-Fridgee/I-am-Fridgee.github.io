@@ -31,7 +31,19 @@ async function startServer() {
   console.log("JWT_SECRET exists:", !!process.env.JWT_SECRET);
   console.log("FIREBASE_PROJECT_ID:", process.env.FIREBASE_PROJECT_ID);
   console.log("=========================");
-
+  // === ADD THESE LINES TO index.ts ===
+  console.log("=== 🚨 ALL ENV VARS ON RENDER ===");
+  // This will safely log all variable NAMES, not their values
+  const allEnvKeys = Object.keys(process.env).sort();
+  console.log(`Total variables: ${allEnvKeys.length}`);
+  // Check for our specific key
+  console.log(`Has DATABASE_URL? ${'DATABASE_URL' in process.env}`);
+  console.log(`Has OWNER_OPEN_ID? ${'OWNER_OPEN_ID' in process.env}`);
+  console.log(`Has JWT_SECRET? ${'JWT_SECRET' in process.env}`);
+  // Log a few random ones to confirm we're reading the env
+  console.log("Sample keys:", allEnvKeys.slice(0, 5));
+  console.log("===================================");
+  
   // tRPC middleware - YOUR BACKEND API
   app.use(
     "/api/trpc",
