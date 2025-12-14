@@ -9,12 +9,28 @@ let _client: ReturnType<typeof postgres> | null = null;
 
 // Lazily create the drizzle instance so local tooling can run without a DB.
 export async function getDb() {
+  console.log("🛠️ [DEBUG] Checking DATABASE_URL...");
+  
+  if (!process.env.DATABASE_URL) {
+    console.log("❌ [DEBUG] DATABASE_URL is EMPTY!");
+    return null;
+  }
+  
+  console.log("✅ [DEBUG] DATABASE_URL exists");
+  console.log("📏 [DEBUG] URL length:", process.env.DATABASE_URL.length);
+  console.log("🔒 [DEBUG] Has sslmode?:", 
+    process.env.DATABASE_URL.includes('sslmode'));
+  console.log("🌍 [DEBUG] Has 'oregon-postgres':", 
+    process.env.DATABASE_URL.includes('oregon-postgres'));
+    
   if (!_db && process.env.DATABASE_URL) {
     try {
+      console.log("🔌 [DEBUG] Attempting database connection...");
       _client = postgres(process.env.DATABASE_URL);
       _db = drizzle(_client);
+      console.log("✅ [DEBUG] Database connection successful!");
     } catch (error) {
-      console.warn("[Database] Failed to connect:", error);
+      console.error("❌ [DEBUG] Failed to connect:", error);
       _db = null;
       _client = null;
     }
