@@ -1,9 +1,13 @@
+
+
 import { router, publicProcedure, protectedProcedure } from "./_core/trpc";
 import { db } from "./firebase-admin";
 import { z } from "zod";
 import { FieldValue } from "firebase-admin/firestore";
+console.log("🔥 firebase-leaderboard.ts LOADED - Firestore version active");
 
 export const firebaseLeaderboardRouter = router({
+
   // Submit or update player score
   submitScore: protectedProcedure
     .input(z.object({ 
@@ -164,6 +168,7 @@ export const firebaseLeaderboardRouter = router({
       }
     }),
 
+
   // Admin: Get all players (for admin panel)
   getAllPlayers: protectedProcedure
     .query(async ({ ctx }) => {
@@ -192,4 +197,7 @@ export const firebaseLeaderboardRouter = router({
         return [];
       }
     })
+});
+
+ 
 });
