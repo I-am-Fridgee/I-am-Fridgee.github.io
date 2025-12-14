@@ -25,18 +25,23 @@ export const leaderboardRouter = router({
 
   // Get top 10 players
   getTopPlayers: publicProcedure.query(async () => {
-    try {
-      const topPlayers = await getTopPlayers(10);
-      return topPlayers.map((p, index) => ({
-        rank: index + 1,
-        username: p.username,
-        highScore: p.highScore,
-      }));
-    } catch (error) {
-      console.error("Failed to get top players:", error);
-      return [];
-    }
-  }),
+  try {
+    const topPlayers = await getTopPlayers(10);
+    
+    // Convert to proper format
+    return topPlayers.map((p, index) => ({
+      rank: index + 1,
+      username: p.username || "Anonymous",
+      highScore: p.highScore || 0,
+    }));
+  } catch (error) {
+    console.error("Failed to get top players:", error);
+    return [];
+  }
+}).meta({
+  // Cache for 30 seconds to reduce database load
+  cache: { ttl: 30 },
+}),
 
   // Get player's rank
   getPlayerRank: protectedProcedure.query(async ({ ctx }) => {
