@@ -1,5 +1,5 @@
-import { leaderboardRouter } from "./leaderboard";
-import { adminRouter } from "./admin"; // Add this import
+import { firebaseLeaderboardRouter } from "./firebase-leaderboard"; // CHANGED: New Firestore import
+import { adminRouter } from "./admin";
 import { COOKIE_NAME } from "@shared/const";
 import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
@@ -7,8 +7,8 @@ import { protectedProcedure, publicProcedure, router } from "./_core/trpc";
 import { z } from "zod";
 
 export const appRouter = router({
-  leaderboard: leaderboardRouter,
-  admin: adminRouter, // Add this line
+  leaderboard: firebaseLeaderboardRouter, // CHANGED: Now uses Firestore
+  admin: adminRouter,
   system: systemRouter,
   auth: router({
     me: publicProcedure.query(opts => opts.ctx.user),
@@ -21,3 +21,5 @@ export const appRouter = router({
     }),
   }),
 });
+
+export type AppRouter = typeof appRouter;
