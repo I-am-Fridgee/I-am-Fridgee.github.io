@@ -106,13 +106,23 @@ export async function getTopPlayers(limit: number = 10) {
     return [];
   }
 
-  const result = await db
-    .select()
-    .from(leaderboard)
-    .orderBy(desc(leaderboard.highScore))
-    .limit(limit);
+  try {
+    const result = await db
+      .select({
+        userId: leaderboard.userId,
+        username: leaderboard.username,
+        highScore: leaderboard.highScore,
+        updatedAt: leaderboard.updatedAt,
+      })
+      .from(leaderboard)
+      .orderBy(desc(leaderboard.highScore))
+      .limit(limit);
 
-  return result;
+    return result;
+  } catch (error) {
+    console.error("[Database] Error getting top players:", error);
+    return [];
+  }
 }
 
 export async function updatePlayerScore(userId: number, username: string, score: number) {
