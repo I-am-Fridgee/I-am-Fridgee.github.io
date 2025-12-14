@@ -38,9 +38,7 @@ export const leaderboardRouter = router({
     console.error("Failed to get top players:", error);
     return [];
   }
-}).meta({
-  // Cache for 30 seconds to reduce database load
-  cache: { ttl: 30 },
+
 }),
 
   // Get player's rank
