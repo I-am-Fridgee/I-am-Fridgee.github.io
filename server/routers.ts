@@ -1,4 +1,5 @@
 import { leaderboardRouter } from "./leaderboard";
+import { adminRouter } from "./admin"; // Add this import
 import { COOKIE_NAME } from "@shared/const";
 import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
@@ -6,7 +7,8 @@ import { protectedProcedure, publicProcedure, router } from "./_core/trpc";
 import { z } from "zod";
 
 export const appRouter = router({
-  leaderboard: leaderboardRouter,  // ← NEW leaderboard (has all features)
+  leaderboard: leaderboardRouter,
+  admin: adminRouter, // Add this line
   system: systemRouter,
   auth: router({
     me: publicProcedure.query(opts => opts.ctx.user),
@@ -18,8 +20,4 @@ export const appRouter = router({
       } as const;
     }),
   }),
-  // Remove the old leaderboard: router({ ... }) section
 });
-
-
-export type AppRouter = typeof appRouter;
