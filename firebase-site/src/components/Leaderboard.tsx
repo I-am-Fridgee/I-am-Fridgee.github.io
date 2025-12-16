@@ -2,21 +2,21 @@ import { useEffect, useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useAuth } from "@/contexts/AuthContext";
 import { useGame } from "@/contexts/GameContext";
-import { Trophy, TrendingUp, Users } from "lucide-react";
+import { Trophy, TrendingUp, Users, RefreshCw } from "lucide-react";
 import { db } from "@/lib/firebase";
 import { collection, query, orderBy, limit, getDocs, getCountFromServer, DocumentData } from "firebase/firestore";
 
 interface TopPlayer {
   rank: number;
   username: string;
-  highScore: number;
+  coins: number; // CHANGED: Now shows CURRENT coins, not highScore
   userId: string;
 }
 
 interface LeaderboardStats {
   totalPlayers: number;
   totalCoins: number;
-  highestScore: number;
+  highestCoins: number; // CHANGED: Current highest coins, not all-time best
 }
 
 export default function Leaderboard() {
@@ -26,38 +26,39 @@ export default function Leaderboard() {
   const [stats, setStats] = useState<LeaderboardStats>({
     totalPlayers: 0,
     totalCoins: 0,
-    highestScore: 0,
+    highestCoins: 0,
   });
   const [playerRank, setPlayerRank] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
+  const [lastUpdated, setLastUpdated] = useState<Date>(new Date());
 
   // Fetch leaderboard data from Firebase
   const fetchLeaderboardData = async () => {
     try {
       setLoading(true);
       
-      // 1. Get top 10 players
+      // 1. Get top 10 players - SORT BY CURRENT COINS
       const playersQuery = query(
         collection(db, "players"),
-        orderBy("highScore", "desc"),
+        orderBy("coins", "desc"), // 🔥 CHANGED: Sort by current coins, not highScore
         limit(10)
       );
       
       const playersSnapshot = await getDocs(playersQuery);
       const players: TopPlayer[] = [];
       let totalCoins = 0;
-      let highestScore = 0;
+      let highestCoins = 0;
       
       playersSnapshot.forEach((doc, index) => {
         const data = doc.data();
-        const highScore = data.highScore || 0;
-        totalCoins += data.coins || 0;
-        highestScore = Math.max(highestScore, highScore);
+        const currentCoins = data.coins || 0; // 🔥 CURRENT coins, not highScore
+        totalCoins += currentCoins;
+        highestCoins = Math.max(highestCoins, currentCoins);
         
         players.push({
           rank: index + 1,
           username: data.username || "Anonymous",
-          highScore: highScore,
+          coins: currentCoins, // 🔥 CURRENT coins
           userId: doc.id
         });
         
@@ -77,7 +78,7 @@ export default function Leaderboard() {
       setStats({
         totalPlayers,
         totalCoins,
-        highestScore
+        highestCoins // 🔥 Current highest coins
       });
       
       // 4. If user not in top 10, find their rank
@@ -85,6 +86,7 @@ export default function Leaderboard() {
         await findUserRank(user.uid);
       }
       
+      setLastUpdated(new Date());
     } catch (error) {
       console.error("Failed to fetch leaderboard:", error);
     } finally {
@@ -97,7 +99,7 @@ export default function Leaderboard() {
     try {
       const allPlayersQuery = query(
         collection(db, "players"),
-        orderBy("highScore", "desc")
+        orderBy("coins", "desc") // 🔥 Sort by current coins
       );
       
       const allPlayersSnapshot = await getDocs(allPlayersQuery);
@@ -116,13 +118,13 @@ export default function Leaderboard() {
     }
   };
 
-  // Auto-refresh every 30 seconds
+  // Auto-refresh every 30 seconds to keep leaderboard live
   useEffect(() => {
     fetchLeaderboardData();
     
     const interval = setInterval(() => {
       fetchLeaderboardData();
-    }, 30000);
+    }, 30000); // Refresh every 30 seconds
     
     return () => clearInterval(interval);
   }, [user]);
@@ -154,8 +156,8 @@ export default function Leaderboard() {
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-amber-200/60 text-sm uppercase tracking-wider">Highest Score</p>
-                <p className="text-3xl font-bold text-amber-100 mt-2">${stats.highestScore.toLocaleString()}</p>
+                <p className="text-amber-200/60 text-sm uppercase tracking-wider">Highest Coins</p>
+                <p className="text-3xl font-bold text-amber-100 mt-2">${stats.highestCoins.toLocaleString()}</p>
               </div>
               <Trophy className="w-12 h-12 text-amber-500/30" />
             </div>
@@ -185,7 +187,7 @@ export default function Leaderboard() {
                 <p className="text-4xl font-bold text-amber-100 mt-2">#{playerRank}</p>
               </div>
               <div className="text-right">
-                <p className="text-amber-200/60 text-sm uppercase tracking-wider">Your Score</p>
+                <p className="text-amber-200/60 text-sm uppercase tracking-wider">Your Coins</p>
                 <p className="text-3xl font-bold text-amber-100 mt-2">${state.coins.toLocaleString()}</p>
               </div>
             </div>
@@ -196,12 +198,27 @@ export default function Leaderboard() {
       {/* Top Players Table */}
       <Card className="bg-black/40 border-amber-500/30 backdrop-blur-md">
         <CardHeader className="border-b border-amber-500/20 pb-4">
-          <CardTitle className="text-2xl font-display text-amber-200">🏆 Top Players</CardTitle>
-          <CardDescription className="text-amber-200/50">Global leaderboard rankings</CardDescription>
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle className="text-2xl font-display text-amber-200">🏆 Live Leaderboard</CardTitle>
+              <CardDescription className="text-amber-200/50">
+                Updated {lastUpdated.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                {loading && " • Refreshing..."}
+              </CardDescription>
+            </div>
+            <button
+              onClick={fetchLeaderboardData}
+              disabled={loading}
+              className="flex items-center gap-2 px-4 py-2 bg-amber-500/20 hover:bg-amber-500/30 border border-amber-500/50 text-amber-200 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <RefreshCw className={`w-4 h-4 ${loading ? "animate-spin" : ""}`} />
+              {loading ? "Refreshing..." : "Refresh"}
+            </button>
+          </div>
         </CardHeader>
         <CardContent className="p-6">
           {loading ? (
-            <div className="text-center py-8 text-amber-200/60">Loading leaderboard...</div>
+            <div className="text-center py-8 text-amber-200/60">Loading live leaderboard...</div>
           ) : topPlayers.length === 0 ? (
             <div className="text-center py-8 text-amber-200/60">
               No players yet. Click the coin to start playing!
@@ -237,8 +254,8 @@ export default function Leaderboard() {
                     </div>
                   </div>
                   <div className="text-right">
-                    <p className="text-2xl font-bold text-amber-100">${player.highScore.toLocaleString()}</p>
-                    <p className="text-xs text-amber-200/60">{Math.floor(player.highScore / 10)} chips</p>
+                    <p className="text-2xl font-bold text-amber-100">${player.coins.toLocaleString()}</p>
+                    <p className="text-xs text-amber-200/60">{Math.floor(player.coins / 10)} chips</p>
                   </div>
                 </div>
               ))}
@@ -247,16 +264,15 @@ export default function Leaderboard() {
         </CardContent>
       </Card>
 
-      {/* Refresh Button */}
-      <div className="text-center">
-        <button
-          onClick={fetchLeaderboardData}
-          disabled={loading}
-          className="px-6 py-2 bg-amber-500/20 hover:bg-amber-500/30 border border-amber-500/50 text-amber-200 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          {loading ? "Refreshing..." : "🔄 Refresh Leaderboard"}
-        </button>
-      </div>
+      {/* Info Box */}
+      <Card className="bg-black/40 border-blue-500/30 backdrop-blur-md">
+        <CardContent className="p-4">
+          <p className="text-blue-200/80 text-sm text-center">
+            💡 <span className="font-semibold">Live Leaderboard:</span> Rankings update every 30 seconds based on CURRENT coins.
+            So ye, it's like 2:20 am (-_-;).
+          </p>
+        </CardContent>
+      </Card>
     </div>
   );
 }
