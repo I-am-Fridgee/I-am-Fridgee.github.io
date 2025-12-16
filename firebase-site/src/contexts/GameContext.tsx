@@ -1,6 +1,7 @@
 import { createContext, useContext, useState, useEffect } from "react";
 import { useAuth } from "./AuthContext";
-import { trpc } from "@/lib/trpc";
+import { db } from "@/lib/firebase";
+import { doc, setDoc, getDoc, updateDoc } from "firebase/firestore";
 
 interface GameState {
   coins: number;
@@ -142,9 +143,6 @@ export const useGame = () => {
 export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { user, loading: authLoading } = useAuth();
   const isAuthenticated = !!user;
-  const submitScoreMutation = trpc.leaderboard.submitScore.useMutation();
-  const getUserDataMutation = trpc.leaderboard.getUserData.useMutation();
-  const saveGameDataMutation = trpc.leaderboard.saveGameData.useMutation();
 
   const [state, setState] = useState<GameState>(() => {
     // Load from localStorage with -v2 suffix
@@ -157,25 +155,28 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
     localStorage.setItem("fridgee_casino_save-v2", JSON.stringify(state));
   }, [state]);
 
-  // Sync from database when user logs in
+  // Sync from Firebase when user logs in
   useEffect(() => {
     const syncFromDatabase = async () => {
       if (isAuthenticated && user && !authLoading) {
         try {
-          const userData = await getUserDataMutation.mutateAsync();
-          if (userData) {
-            // Merge database data with local data (database takes priority for coins/chips)
+          const userId = user.uid; // Firebase user ID
+          const playerRef = doc(db, "players", userId);
+          const playerDoc = await getDoc(playerRef);
+          
+          if (playerDoc.exists()) {
+            const data = playerDoc.data();
             setState((prev) => ({
               ...prev,
-              coins: userData.coins ?? prev.coins,
-              chips: userData.chips ?? prev.chips,
-              clickCount: userData.clickCount ?? prev.clickCount,
-              upgrades: userData.upgrades ? JSON.parse(userData.upgrades) : prev.upgrades,
-              activeCosmetics: userData.activeCosmetics ? JSON.parse(userData.activeCosmetics) : prev.activeCosmetics,
+              coins: data.coins ?? prev.coins,
+              chips: data.chips ?? prev.chips,
+              clickCount: data.clickCount ?? prev.clickCount,
+              upgrades: data.upgrades ? JSON.parse(data.upgrades) : prev.upgrades,
+              activeCosmetics: data.activeCosmetics ? JSON.parse(data.activeCosmetics) : prev.activeCosmetics,
             }));
           }
         } catch (error) {
-          console.error("Failed to sync from database:", error);
+          console.error("Failed to sync from Firebase:", error);
         }
       }
     };
@@ -183,21 +184,45 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
     syncFromDatabase();
   }, [isAuthenticated, user, authLoading]);
 
-  // Auto-sync to database every 30 seconds if authenticated
+  // Auto-sync to Firebase every 30 seconds if authenticated
   useEffect(() => {
     if (!isAuthenticated || !user) return;
 
     const syncInterval = setInterval(async () => {
       try {
-        await saveGameDataMutation.mutateAsync({
-          coins: state.coins,
-          chips: state.chips,
-          clickCount: state.clickCount,
-          upgrades: JSON.stringify(state.upgrades),
-          activeCosmetics: JSON.stringify(state.activeCosmetics),
-        });
+        const userId = user.uid;
+        const playerRef = doc(db, "players", userId);
+        
+        // Check if document exists
+        const playerDoc = await getDoc(playerRef);
+        
+        if (playerDoc.exists()) {
+          // Update existing
+          await updateDoc(playerRef, {
+            coins: state.coins,
+            chips: state.chips,
+            clickCount: state.clickCount,
+            upgrades: JSON.stringify(state.upgrades),
+            activeCosmetics: JSON.stringify(state.activeCosmetics),
+            highScore: Math.max(playerDoc.data().highScore || 0, state.coins),
+            lastUpdated: new Date()
+          });
+        } else {
+          // Create new
+          await setDoc(playerRef, {
+            username: user.displayName || "Player",
+            coins: state.coins,
+            chips: state.chips,
+            clickCount: state.clickCount,
+            upgrades: JSON.stringify(state.upgrades),
+            activeCosmetics: JSON.stringify(state.activeCosmetics),
+            highScore: state.coins,
+            totalClicks: state.clickCount,
+            createdAt: new Date()
+          });
+        }
       } catch (error) {
-        console.error("Failed to save game data:", error);
+        console.error("Failed to save to Firebase:", error);
       }
     }, 30000); // Sync every 30 seconds
 
@@ -207,8 +232,25 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
   // Submit score to leaderboard
   useEffect(() => {
     if (isAuthenticated && user && state.coins > 0) {
-      const timer = setTimeout(() => {
-        submitScoreMutation.mutate({ score: state.coins });
+      const timer = setTimeout(async () => {
+        try {
+          const userId = user.uid;
+          const playerRef = doc(db, "players", userId);
+          const playerDoc = await getDoc(playerRef);
+          
+          if (playerDoc.exists()) {
+            const currentHighScore = playerDoc.data().highScore || 0;
+            if (state.coins > currentHighScore) {
+              await updateDoc(playerRef, {
+                highScore: state.coins,
+                coins: state.coins,
+                lastUpdated: new Date()
+              });
+            }
+          }
+        } catch (error) {
+          console.error("Failed to update leaderboard:", error);
+        }
       }, 2000);
 
       return () => clearTimeout(timer);
@@ -367,15 +409,35 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const syncToDatabase = async () => {
     if (!isAuthenticated || !user) return;
     try {
-      await saveGameDataMutation.mutateAsync({
-        coins: state.coins,
-        chips: state.chips,
-        clickCount: state.clickCount,
-        upgrades: JSON.stringify(state.upgrades),
-        activeCosmetics: JSON.stringify(state.activeCosmetics),
-      });
+      const userId = user.uid;
+      const playerRef = doc(db, "players", userId);
+      const playerDoc = await getDoc(playerRef);
+      
+      if (playerDoc.exists()) {
+        await updateDoc(playerRef, {
+          coins: state.coins,
+          chips: state.chips,
+          clickCount: state.clickCount,
+          upgrades: JSON.stringify(state.upgrades),
+          activeCosmetics: JSON.stringify(state.activeCosmetics),
+          highScore: Math.max(playerDoc.data().highScore || 0, state.coins),
+          lastUpdated: new Date()
+        });
+      } else {
+        await setDoc(playerRef, {
+          username: user.displayName || "Player",
+          coins: state.coins,
+          chips: state.chips,
+          clickCount: state.clickCount,
+          upgrades: JSON.stringify(state.upgrades),
+          activeCosmetics: JSON.stringify(state.activeCosmetics),
+          highScore: state.coins,
+          totalClicks: state.clickCount,
+          createdAt: new Date()
+        });
+      }
     } catch (error) {
-      console.error("Failed to sync to database:", error);
+      console.error("Failed to sync to Firebase:", error);
     }
   };
 
